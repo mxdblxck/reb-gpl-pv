@@ -1,0 +1,365 @@
+import { useState, useId } from "react";
+import { Button } from "@/components/ui/button.tsx";
+import { Input } from "@/components/ui/input.tsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
+import { Label } from "@/components/ui/label.tsx";
+import {
+  Plus,
+  Trash2,
+  Zap,
+  Table2,
+  Hash,
+} from "lucide-react";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export type LoadItem = {
+  id: string;
+  name: string;
+  power: number; // Watts
+  hours: number; // h/j
+  quantity: number;
+};
+
+type Props = {
+  siteId: string;
+  totalWh: number; // valeur contrôlée pour le mode simple
+  onTotalChange: (wh: number) => void;
+};
+
+// ── Charges prédéfinies pour ajout rapide ─────────────────────────────────────
+
+const PRESET_LOADS = [
+  { name: "PLC / RTU", power: 30, hours: 24, quantity: 1 },
+  { name: "Radio / Modem", power: 20, hours: 24, quantity: 1 },
+  { name: "Capteurs (pression/temp)", power: 5, hours: 24, quantity: 4 },
+  { name: "Panneau ESD", power: 50, hours: 24, quantity: 1 },
+  { name: "Éclairage (LED)", power: 40, hours: 12, quantity: 2 },
+  { name: "Terminal SCADA", power: 60, hours: 8, quantity: 1 },
+  { name: "Chargeur UPS", power: 80, hours: 24, quantity: 1 },
+  { name: "Détecteur Feu & Gaz", power: 10, hours: 24, quantity: 1 },
+  { name: "Caméra CCTV", power: 15, hours: 24, quantity: 2 },
+  { name: "Actionneur Vanne de Contrôle", power: 25, hours: 4, quantity: 1 },
+];
+
+function newItem(): LoadItem {
+  return {
+    id: crypto.randomUUID(),
+    name: "",
+    power: 0,
+    hours: 24,
+    quantity: 1,
+  };
+}
+
+function calcEnergy(item: LoadItem): number {
+  return item.power * item.hours * item.quantity;
+}
+
+// ── Composant Principal ────────────────────────────────────────────────────────
+
+export default function EnergyLoadInput({ siteId, totalWh, onTotalChange }: Props) {
+  const [mode, setMode] = useState<"simple" | "detailed">("simple");
+  const [items, setItems] = useState<LoadItem[]>([newItem()]);
+  const [showPresets, setShowPresets] = useState(false);
+  const labelId = useId();
+
+  // Total mode détaillé
+  const detailedTotal = items.reduce((sum, it) => sum + calcEnergy(it), 0);
+
+  // Lors du passage en mode simple depuis le mode détaillé, synchroniser le total
+  const handleModeChange = (v: string) => {
+    const next = v as "simple" | "detailed";
+    if (next === "simple" && mode === "detailed") {
+      onTotalChange(detailedTotal);
+    }
+    setMode(next);
+  };
+
+  // Mettre à jour un champ d'une ligne de charge
+  const updateItem = (id: string, field: keyof LoadItem, value: string | number) => {
+    setItems((prev) =>
+      prev.map((it) => {
+        if (it.id !== id) return it;
+        if (field === "name") return { ...it, name: value as string };
+        const num = typeof value === "number" ? value : parseFloat(value as string);
+        return { ...it, [field]: isNaN(num) ? 0 : num };
+      })
+    );
+    // Synchroniser le total
+    setItems((prev) => {
+      const updated = prev.map((it) => {
+        if (it.id !== id) return it;
+        if (field === "name") return { ...it, name: value as string };
+        const num = typeof value === "number" ? value : parseFloat(value as string);
+        return { ...it, [field]: isNaN(num) ? 0 : num };
+      });
+      const total = updated.reduce((s, i) => s + calcEnergy(i), 0);
+      onTotalChange(total);
+      return updated;
+    });
+  };
+
+  const addItem = () => setItems((prev) => [...prev, newItem()]);
+
+  const removeItem = (id: string) => {
+    setItems((prev) => {
+      const next = prev.filter((it) => it.id !== id);
+      const total = next.reduce((s, i) => s + calcEnergy(i), 0);
+      onTotalChange(total);
+      return next.length === 0 ? [newItem()] : next;
+    });
+  };
+
+  const addPreset = (preset: (typeof PRESET_LOADS)[number]) => {
+    const item: LoadItem = {
+      id: crypto.randomUUID(),
+      ...preset,
+    };
+    setItems((prev) => {
+      // Supprimer le placeholder vide s'il n'y a qu'une seule ligne vide
+      const cleaned =
+        prev.length === 1 && prev[0].name === "" && prev[0].power === 0
+          ? []
+          : prev;
+      const next = [...cleaned, item];
+      const total = next.reduce((s, i) => s + calcEnergy(i), 0);
+      onTotalChange(total);
+      return next;
+    });
+    setShowPresets(false);
+  };
+
+  // Suppress unused variable warning
+  void siteId;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <Label id={labelId} className="text-sm font-medium">
+          Charge Énergétique Journalière —{" "}
+          <span className="text-primary font-semibold">E (Wh/j)</span>
+          <span className="text-destructive ml-1">*</span>
+        </Label>
+        {/* Sélecteur de mode */}
+        <Tabs value={mode} onValueChange={handleModeChange}>
+          <TabsList className="h-7 text-xs">
+            <TabsTrigger value="simple" className="h-5 text-xs px-2 gap-1">
+              <Hash className="w-3 h-3" />
+              Simple
+            </TabsTrigger>
+            <TabsTrigger value="detailed" className="h-5 text-xs px-2 gap-1">
+              <Table2 className="w-3 h-3" />
+              Détaillé
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {mode === "simple" ? (
+        /* ── Mode Simple ─────────────────────────────────────────────────────── */
+        <div className="space-y-1.5">
+          <div className="flex gap-3 items-center">
+            <Input
+              type="number"
+              min={0}
+              step={100}
+              value={totalWh === 0 ? "" : totalWh}
+              placeholder="ex. 12000"
+              onChange={(e) => {
+                const num = parseFloat(e.target.value);
+                onTotalChange(isNaN(num) ? 0 : num);
+              }}
+              className="max-w-xs text-base font-semibold"
+              aria-labelledby={labelId}
+            />
+            <span className="text-sm text-muted-foreground">Wh/j</span>
+          </div>
+          {totalWh > 0 && (
+            <p className="text-xs text-muted-foreground">
+              ≈ {(totalWh / 1000).toFixed(3)} kWh/j
+            </p>
+          )}
+        </div>
+      ) : (
+        /* ── Mode Détaillé ──────────────────────────────────────────────────── */
+        <div className="space-y-2">
+          {/* Présélections */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              size="sm"
+              onClick={() => setShowPresets((v) => !v)}
+              className="h-7 text-xs gap-1 border border-border bg-muted/30 text-muted-foreground hover:bg-muted"
+            >
+              <Plus className="w-3 h-3" />
+              Ajout rapide prédéfini
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              ou ajouter des lignes manuellement ci-dessous
+            </span>
+          </div>
+
+          {showPresets && (
+            <div className="flex flex-wrap gap-1.5 p-3 bg-muted/20 rounded-lg border border-border">
+              {PRESET_LOADS.map((p) => (
+                <Button
+                  key={p.name}
+                  size="sm"
+                  onClick={() => addPreset(p)}
+                  className="h-6 text-[11px] px-2 border border-border bg-background text-foreground hover:bg-primary/5 hover:border-primary/30"
+                >
+                  {p.name}
+                </Button>
+              ))}
+            </div>
+          )}
+
+          {/* Tableau */}
+          <div className="rounded-lg border border-border overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/30 border-b border-border">
+                <tr>
+                  <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground min-w-[160px]">
+                    Charge / Équipement
+                  </th>
+                  <th className="text-center px-3 py-2 text-xs font-semibold text-muted-foreground w-24">
+                    Puissance (W)
+                  </th>
+                  <th className="text-center px-3 py-2 text-xs font-semibold text-muted-foreground w-24">
+                    Heures/j
+                  </th>
+                  <th className="text-center px-3 py-2 text-xs font-semibold text-muted-foreground w-20">
+                    Qté
+                  </th>
+                  <th className="text-right px-3 py-2 text-xs font-semibold text-primary w-28">
+                    Énergie (Wh/j)
+                  </th>
+                  <th className="w-8" />
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, i) => {
+                  const energy = calcEnergy(item);
+                  return (
+                    <tr
+                      key={item.id}
+                      className={`border-b border-border last:border-0 ${i % 2 === 0 ? "" : "bg-muted/10"}`}
+                    >
+                      <td className="px-2 py-1.5">
+                        <Input
+                          value={item.name}
+                          onChange={(e) => updateItem(item.id, "name", e.target.value)}
+                          placeholder={`Charge ${i + 1}`}
+                          className="h-7 text-xs border-0 bg-transparent focus:bg-background focus:border focus:border-border px-1"
+                        />
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <Input
+                          type="number"
+                          min={0}
+                          step={1}
+                          value={item.power === 0 ? "" : item.power}
+                          placeholder="0"
+                          onChange={(e) => updateItem(item.id, "power", e.target.value)}
+                          className="h-7 text-xs text-center border-0 bg-transparent focus:bg-background focus:border focus:border-border"
+                        />
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={24}
+                          step={0.5}
+                          value={item.hours}
+                          onChange={(e) => updateItem(item.id, "hours", e.target.value)}
+                          className="h-7 text-xs text-center border-0 bg-transparent focus:bg-background focus:border focus:border-border"
+                        />
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <Input
+                          type="number"
+                          min={1}
+                          step={1}
+                          value={item.quantity}
+                          onChange={(e) => updateItem(item.id, "quantity", e.target.value)}
+                          className="h-7 text-xs text-center border-0 bg-transparent focus:bg-background focus:border focus:border-border"
+                        />
+                      </td>
+                      <td className="px-3 py-1.5 text-right">
+                        <span
+                          className={`font-semibold text-xs ${energy > 0 ? "text-primary" : "text-muted-foreground"}`}
+                        >
+                          {energy > 0 ? energy.toFixed(0) : "—"}
+                        </span>
+                      </td>
+                      <td className="px-1 py-1.5">
+                        <Button
+                          size="sm"
+                          onClick={() => removeItem(item.id)}
+                          className="h-6 w-6 p-0 border-0 bg-transparent text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              {/* Ligne total */}
+              <tfoot>
+                <tr className="bg-primary/5 border-t-2 border-primary/20">
+                  <td
+                    colSpan={4}
+                    className="px-3 py-2.5 font-semibold text-sm text-foreground"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-primary" />
+                      Charge Énergétique Journalière Totale
+                    </div>
+                  </td>
+                  <td className="px-3 py-2.5 text-right">
+                    <span className="font-bold text-primary text-base">
+                      {detailedTotal.toFixed(0)}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-1">
+                      Wh/j
+                    </span>
+                  </td>
+                  <td />
+                </tr>
+                {detailedTotal > 0 && (
+                  <tr className="bg-primary/5">
+                    <td colSpan={6} className="px-3 pb-2.5 text-xs text-muted-foreground">
+                      ≈ {(detailedTotal / 1000).toFixed(3)} kWh/j
+                      {" | "}
+                      {items.filter((i) => i.power > 0).length} charge(s) active(s)
+                    </td>
+                  </tr>
+                )}
+              </tfoot>
+            </table>
+          </div>
+
+          {/* Bouton d'ajout de ligne */}
+          <Button
+            size="sm"
+            onClick={addItem}
+            className="h-7 text-xs gap-1 border border-dashed border-primary/40 bg-transparent text-primary hover:bg-primary/5"
+          >
+            <Plus className="w-3 h-3" />
+            Ajouter une ligne
+          </Button>
+
+          {/* Indication de synchronisation */}
+          {detailedTotal > 0 && (
+            <p className="text-[11px] text-muted-foreground">
+              Dimensionnement calculé avec{" "}
+              <strong className="text-primary">{detailedTotal.toFixed(0)} Wh/j</strong>{" "}
+              issu du tableau ci-dessus
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
