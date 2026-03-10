@@ -130,30 +130,32 @@ export default function Index() {
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-28 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 overflow-hidden">
-        {/* Solar gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
+      <section className="relative pt-28 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 overflow-hidden min-h-[85vh] flex items-center">
+        {/* PV Panel Background Image with Overlay */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="https://images.unsplash.com/photo-1509391366360-2e959784a276?w=1920&q=80" 
+            alt="Solar Panels" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-slate-900/50" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-slate-900/30" />
+        </div>
         
-        {/* Grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.025]"
-          style={{
-            backgroundImage:
-            "linear-gradient(#FF6600 1px, transparent 1px), linear-gradient(90deg, #FF6600 1px, transparent 1px)",
-            backgroundSize: "40px 40px"
-          }} />
-        
-        {/* Large solar glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] sm:w-[800px] h-[300px] sm:h-[400px] bg-primary/8 rounded-full blur-[120px] sm:blur-[150px]" />
+        {/* Animated Particles/Glow */}
+        <div className="absolute inset-0 z-10 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-[100px] animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+        </div>
 
-        <div className="relative max-w-4xl mx-auto text-center">
+        <div className="relative z-20 max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}>
             
-            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-medium px-4 py-2 rounded-full mb-4 sm:mb-6">
-              <Zap className="w-4 h-4" />
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-orange-400 text-xs sm:text-sm font-medium px-4 py-2 rounded-full mb-4 sm:mb-6">
+              <Sun className="w-4 h-4" />
               Sonatrach Ligne GPL — Rhourde El Baguel, Algérie
             </div>
           </motion.div>
@@ -162,18 +164,16 @@ export default function Index() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-foreground text-balance mb-4 sm:mb-6">
+            className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-white text-balance mb-4 sm:mb-6">
             
-            Dimensionnement Solaire PV pour{" "}
-            <span className="text-primary">Off-Grid</span>{" "}
-            Project
+            Dimensionnement du système pour le projet <span className="text-orange-400">Off-Grid</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 text-balance">
+            className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto mb-8 sm:mb-10 text-balance">
             
             Dimensionnement photovoltaïque professionnel pour BVS1, BVS2 et
             Terminal d'Arrivée sur la pipeline GPL REB. Calculs d'ingénierie
@@ -185,7 +185,7 @@ export default function Index() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}>
             
-            <Button size="lg" onClick={() => navigate("/calculator")} className="gap-2 text-sm sm:text-base px-6 sm:px-8 h-11 sm:h-12">
+            <Button size="lg" onClick={() => navigate("/calculator")} className="gap-2 text-sm sm:text-base px-6 sm:px-8 h-11 sm:h-12 bg-orange-500 hover:bg-orange-600 border-0">
               <Calculator className="w-5 h-5" />
               Ouvrir le Calculateur
               <ChevronRight className="w-5 h-5" />
@@ -207,13 +207,13 @@ export default function Index() {
           map((stat, i) =>
           <div
             key={i}
-            className="bg-card border border-border rounded-xl p-4 sm:p-5 text-center shadow-sm">
+            className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 sm:p-5 text-center shadow-sm">
             
-              <div className="text-xl sm:text-2xl font-bold text-primary">{stat.value}</div>
-              <div className="text-xs sm:text-sm font-medium text-foreground mt-1">
+              <div className="text-xl sm:text-2xl font-bold text-orange-400">{stat.value}</div>
+              <div className="text-xs sm:text-sm font-medium text-white mt-1">
                 {stat.label}
               </div>
-              <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+              <div className="text-[10px] sm:text-xs text-slate-400 mt-0.5">
                 {stat.sub}
               </div>
             </div>

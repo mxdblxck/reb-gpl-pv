@@ -139,7 +139,7 @@ export default function ProjectPage() {
       return;
     }
     try {
-      generateSizingPDF(results);
+      generateSizingPDF(results, project?.name);
       toast.success("Rapport PDF généré.");
     } catch {
       toast.error("Échec de la génération du PDF.");
