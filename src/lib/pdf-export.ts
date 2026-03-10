@@ -1,8 +1,9 @@
-// PDF Export utility for Solar Sizing Reports
+// PDF & Excel Export utility for Solar Sizing Reports
 // REB GPL Line Project — UTE C15-712-2
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import type { SiteResult } from "./solar-calc.ts";
 import { formatWp, formatWh, formatAh, calculateRecharge, SITE_DETAIL_CONFIGS, getSiteFullName } from "./solar-calc.ts";
 
@@ -35,11 +36,11 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
   
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text("Direction Centrale - Exploitation & Production Magnin", margin, 22);
+  doc.text("Direction Centrale - Engineering & Project Management", margin, 22);
   
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.text("PROJET REB GPL - RHOURDE EL BAGUEL", margin, 29);
+  doc.text("Projet ligne d'expédition GPL 14\" - RHOURDE EL BAGUEL", margin, 29);
 
   // Right side - Report title
   doc.setFont("helvetica", "bold");
@@ -387,4 +388,117 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
     : `REB-GPL-PV-Dimensionnement-${new Date().toISOString().slice(0, 10)}.pdf`;
     
   doc.save(fileName);
+}
+
+// Excel Export function
+export function generateExcel(results: SiteResult[], projectName?: string): void {
+  const wb = XLSX.utils.book_new();
+  
+  // Feuille 1: Récapitulatif
+  const summaryData = [
+    ["SONATRACH - REB GPL Ligne"],
+    ["Projet: " + (projectName || "Dimensionnement PV")],
+    ["Date: " + new Date().toLocaleDateString('fr-FR')],
+    [""],
+    ["PARAMÈTRES"],
+    ["Emplacement", "Rhourde El Baguel, Algérie"],
+    ["PSH (pire mois)", results[0]?.params.psh + " h/jour"],
+    ["PR", results[0]?.params.pr],
+    ["Tension système", results[0]?.params.systemVoltage + " V DC"],
+    ["Autonomie", results[0]?.params.autonomy + " jours"],
+    ["DOD", (results[0]?.params.dod * 100) + "%"],
+    [""],
+  ];
+  
+  const summaryHeader = ["Site", "Énergie (Wh/j)", "Puissance PV (Wp)", "Modules", "Config PV", "Capacité Batt (Ah)", "Config Batt"];
+  const summaryRows = results.map(r => [
+    r.siteId,
+    r.correctedEnergyLoad.toFixed(0),
+    r.pv.actualPvPower,
+    r.pv.totalModules,
+    r.pv.configLabel,
+    r.battery.actualCapacityAh,
+    r.battery.configLabel,
+  ]);
+  
+  summaryData.push(summaryHeader);
+  summaryRows.forEach(row => summaryData.push(row));
+  
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+  XLSX.utils.book_append_sheet(wb, wsSummary, "Récapitulatif");
+  
+  // Feuille 2: Détails PV
+  const pvData = [
+    ["DÉTAIL SYSTÈME PV"],
+    [""],
+    ["Site", "Puissance Requise", "Puissance Installée", "Modules Total", "Modules/Groupe", "Groupes", "Série/String", "Strings//Groupe"],
+  ];
+  results.forEach(r => {
+    pvData.push([
+      r.siteId,
+      String(r.pv.pvRequiredWp),
+      String(r.pv.actualPvPower),
+      String(r.pv.totalModules),
+      String(r.pv.nModulesPerGroup),
+      String(r.params.groups),
+      String(r.pv.seriesPerGroup),
+      String(r.pv.parallelStrings),
+    ]);
+  });
+  const wsPV = XLSX.utils.aoa_to_sheet(pvData);
+  XLSX.utils.book_append_sheet(wb, wsPV, "Système PV");
+  
+  // Feuille 3: Détails Batterie
+  const battData = [
+    ["DÉTAIL PARC BATTERIES"],
+    [""],
+    ["Site", "Capacité Requise (Ah)", "Capacité Installée (Ah)", "Énergie (Wh)", "Cellules Série", "Branches Parall", "Total Cellules", "Config"],
+  ];
+  results.forEach(r => {
+    battData.push([
+      r.siteId,
+      String(r.battery.capacityAh),
+      String(r.battery.actualCapacityAh),
+      String(r.battery.actualCapacityWh),
+      String(r.battery.cellsInSeries),
+      String(r.battery.parallelBranches),
+      String(r.battery.totalCells),
+      r.battery.configLabel,
+    ]);
+  });
+  const wsBatt = XLSX.utils.aoa_to_sheet(battData);
+  XLSX.utils.book_append_sheet(wb, wsBatt, "Batteries");
+  
+  // Feuille 4: Temps de Recharge
+  const rechargeData = [
+    ["TEMPS DE RECHARGE DES BATTERIES"],
+    [""],
+  ];
+  
+  results.forEach(r => {
+    rechargeData.push(["Site: " + r.siteId]);
+    rechargeData.push(["PSH (h/j)", "E_pv_net (Wh/j)", "E_charge (Wh)", "Surplus (Wh/j)", "T_recharge (jours)"]);
+    
+    const recharge = calculateRecharge(r);
+    recharge.scenarios.forEach(s => {
+      rechargeData.push([
+        String(s.sunHours),
+        s.ePvJ.toFixed(0),
+        s.eLoadDuringPSH.toFixed(0),
+        s.eRechargeJ > 0 ? "+" + s.eRechargeJ.toFixed(0) : s.eRechargeJ.toFixed(0),
+        s.daysToRecharge !== null ? s.daysToRecharge.toFixed(2) : "N/A",
+      ]);
+    });
+    rechargeData.push([""]);
+  });
+  
+  const wsRecharge = XLSX.utils.aoa_to_sheet(rechargeData);
+  XLSX.utils.book_append_sheet(wb, wsRecharge, "Temps Recharge");
+  
+  // Sauvegarder
+  const fileName = projectName 
+    ? `REB-GPL-PV-${projectName.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().slice(0, 10)}.xlsx`
+    : `REB-GPL-PV-Dimensionnement-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    
+  XLSX.writeFile(wb, fileName);
 }

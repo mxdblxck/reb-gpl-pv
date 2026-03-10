@@ -16,7 +16,7 @@ import EnergyCharts from "./_components/EnergyCharts.tsx";
 import EnergyLoadInput from "./_components/EnergyLoadInput.tsx";
 import type { SiteParams, SiteResult } from "@/lib/solar-calc.ts";
 import { SITES, getDefaultSiteParams, calculateSite, getSiteFullName } from "@/lib/solar-calc.ts";
-import { generateSizingPDF } from "@/lib/pdf-export.ts";
+import { generateSizingPDF, generateExcel } from "@/lib/pdf-export.ts";
 import { ConvexError } from "convex/values";
 import type { Id } from "@/convex/_generated/dataModel.d.ts";
 
@@ -159,6 +159,25 @@ export default function ProjectPage() {
             >
               <Download className="w-3 h-3" />
               <span className="hidden sm:inline">PDF</span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (results.length === 0) {
+                  toast.error("Veuillez saisir au moins une charge énergétique pour exporter.");
+                  return;
+                }
+                try {
+                  generateExcel(results, project?.name);
+                  toast.success("Fichier Excel généré.");
+                } catch {
+                  toast.error("Échec de la génération du fichier Excel.");
+                }
+              }}
+              className="h-8 gap-1 border border-border bg-transparent text-muted-foreground hover:bg-muted text-xs"
+            >
+              <Download className="w-3 h-3" />
+              <span className="hidden sm:inline">Excel</span>
             </Button>
             <Button
               size="sm"
