@@ -92,16 +92,16 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       {/* Barre de navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
               src="https://cdn.hercules.app/file_HcgQRt87zEBLp1lXLPqQ4NdJ"
               alt="Sonatrach"
-              className="h-8 w-auto object-contain" />
+              className="h-7 sm:h-8 w-auto object-contain" />
             
-            <div className="h-6 w-px bg-border" />
-            <div>
+            <div className="h-5 sm:h-6 w-px bg-border hidden sm:block" />
+            <div className="hidden sm:block">
               <span className="font-bold text-foreground text-sm leading-tight block">
                 SolarSizer
               </span>
@@ -110,26 +110,41 @@ export default function Index() {
               </span>
             </div>
           </div>
-          <Button onClick={() => navigate("/calculator")} size="sm">
-            Ouvrir le Calculateur
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate("/dashboard")}
+              className="hidden sm:flex text-muted-foreground hover:text-foreground"
+            >
+              <FolderOpen className="w-4 h-4 mr-1.5" />
+              Projets
+            </Button>
+            <Button onClick={() => navigate("/calculator")} size="sm">
+              <Calculator className="w-4 h-4 mr-1.5 sm:mr-2" />
+              <span className="hidden sm:inline">Ouvrir le </span>Calculateur
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-32 pb-24 px-6 overflow-hidden">
-        {/* Grille de fond */}
+      <section className="relative pt-28 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 overflow-hidden">
+        {/* Solar gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
+        
+        {/* Grid pattern */}
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.025]"
           style={{
             backgroundImage:
             "linear-gradient(#FF6600 1px, transparent 1px), linear-gradient(90deg, #FF6600 1px, transparent 1px)",
             backgroundSize: "40px 40px"
           }} />
         
-        {/* Halo orange */}
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-primary/10 rounded-full blur-[100px]" />
+        {/* Large solar glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] sm:w-[800px] h-[300px] sm:h-[400px] bg-primary/8 rounded-full blur-[120px] sm:blur-[150px]" />
 
         <div className="relative max-w-4xl mx-auto text-center">
           <motion.div
@@ -137,7 +152,7 @@ export default function Index() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}>
             
-            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary text-sm font-medium px-4 py-2 rounded-full mb-6">
+            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-medium px-4 py-2 rounded-full mb-4 sm:mb-6">
               <Zap className="w-4 h-4" />
               Sonatrach Ligne GPL — Rhourde El Baguel, Algérie
             </div>
@@ -147,7 +162,7 @@ export default function Index() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground text-balance mb-6 text-4xl">
+            className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-foreground text-balance mb-4 sm:mb-6">
             
             Dimensionnement Solaire PV pour{" "}
             <span className="text-primary">Off-Grid</span>{" "}
@@ -158,7 +173,7 @@ export default function Index() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10 text-balance">
+            className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 text-balance">
             
             Dimensionnement photovoltaïque professionnel pour BVS1, BVS2 et
             Terminal d'Arrivée sur la pipeline GPL REB. Calculs d'ingénierie
@@ -170,9 +185,10 @@ export default function Index() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}>
             
-            <Button size="lg" onClick={() => navigate("/calculator")} className="gap-2 text-base px-8">
+            <Button size="lg" onClick={() => navigate("/calculator")} className="gap-2 text-sm sm:text-base px-6 sm:px-8 h-11 sm:h-12">
               <Calculator className="w-5 h-5" />
               Ouvrir le Calculateur
+              <ChevronRight className="w-5 h-5" />
             </Button>
           </motion.div>
         </div>
@@ -182,7 +198,7 @@ export default function Index() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.5 }}
-          className="relative max-w-3xl mx-auto mt-16 grid grid-cols-3 gap-4">
+          className="relative max-w-3xl mx-auto mt-10 sm:mt-16 grid grid-cols-3 gap-3 sm:gap-4">
           
           {[
           { label: "Heures de Soleil Crête", value: "4,95 h", sub: "Pire mois" },
@@ -191,13 +207,13 @@ export default function Index() {
           map((stat, i) =>
           <div
             key={i}
-            className="bg-card border border-border rounded-xl p-5 text-center shadow-sm">
+            className="bg-card border border-border rounded-xl p-4 sm:p-5 text-center shadow-sm">
             
-              <div className="text-2xl font-bold text-primary">{stat.value}</div>
-              <div className="text-sm font-medium text-foreground mt-1">
+              <div className="text-xl sm:text-2xl font-bold text-primary">{stat.value}</div>
+              <div className="text-xs sm:text-sm font-medium text-foreground mt-1">
                 {stat.label}
               </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
+              <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
                 {stat.sub}
               </div>
             </div>
@@ -206,13 +222,13 @@ export default function Index() {
       </section>
 
       {/* Sites */}
-      <section className="py-16 px-6 bg-secondary/30">
+      <section className="py-12 sm:py-16 px-4 sm:px-6 bg-secondary/30">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl font-bold text-foreground mb-2">
+          <div className="text-center mb-8 sm:mb-10">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
               Trois Sites, Un Seul Outil
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm sm:text-base">
               Dimensionnez les trois stations de la pipeline en une seule session
             </p>
           </div>
@@ -224,22 +240,23 @@ export default function Index() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="bg-card border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-              
-                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mx-auto mb-4">
+              className="bg-card border border-border rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:border-primary/30"
+              onClick={() => navigate("/calculator")}
+            >
+                <div className="w-10 sm:w-12 h-10 sm:h-12 bg-primary rounded-xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
                   <span className="text-white font-bold text-sm">{site.id}</span>
                 </div>
-                <h3 className="font-semibold text-foreground text-center mb-1">
+                <h3 className="font-semibold text-foreground text-center mb-1 text-sm sm:text-base">
                   {site.label}
                 </h3>
-                <p className="text-sm text-muted-foreground text-center mb-3">
+                <p className="text-xs sm:text-sm text-muted-foreground text-center mb-3">
                   {site.description}
                 </p>
                 <div className="flex justify-center gap-2 flex-wrap">
-                  <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">
+                  <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">
                     {site.battery}
                   </span>
-                  <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full border border-border">
+                  <span className="text-[10px] sm:text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full border border-border">
                     {site.groups}
                   </span>
                 </div>
@@ -250,17 +267,17 @@ export default function Index() {
       </section>
 
       {/* Fonctionnalités */}
-      <section className="py-20 px-6">
+      <section className="py-12 sm:py-20 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold text-foreground mb-3">
+          <div className="text-center mb-8 sm:mb-14">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2 sm:mb-3">
               Fonctionnalités de Niveau Ingénierie
             </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">Conçu spécifiquement pour le systèmes PV off-grid pour les ouvrages de SH-REB-GPL
+            <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">Conçu spécifiquement pour le systèmes PV off-grid pour les ouvrages de SH-REB-GPL
 
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {features.map((f, i) =>
             <motion.div
               key={f.title}
@@ -268,13 +285,13 @@ export default function Index() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
-              className="bg-card border border-border rounded-xl p-6 hover:border-primary/30 transition-colors shadow-sm">
+              className="bg-card border border-border rounded-xl p-4 sm:p-6 hover:border-primary/30 transition-colors shadow-sm">
               
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
                   <f.icon className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <h3 className="font-semibold text-foreground mb-2 text-sm sm:text-base">{f.title}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                   {f.description}
                 </p>
               </motion.div>
@@ -284,15 +301,15 @@ export default function Index() {
       </section>
 
       {/* Paramètres par défaut */}
-      <section className="py-16 px-6 bg-primary text-white">
+      <section className="py-12 sm:py-16 px-4 sm:px-6 bg-primary text-white">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl font-bold mb-2">Paramètres par Défaut Préconfigurés</h2>
-            <p className="text-white/70">Paramètres spécifiques au site REB intégrés — entrez simplement les charges énergétiques
+          <div className="text-center mb-8 sm:mb-10">
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">Paramètres par Défaut Préconfigurés</h2>
+            <p className="text-white/70 text-sm sm:text-base">Paramètres spécifiques au site REB intégrés — entrez simplement les charges énergétiques
 
             </p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {highlights.map((h, i) =>
             <motion.div
               key={i}
@@ -300,7 +317,7 @@ export default function Index() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.07 }}
-              className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-3">
+              className="flex items-center gap-2 bg-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3">
               
                 <CheckCircle2 className="w-4 h-4 text-white/80 shrink-0" />
                 <span className="text-sm text-white/90">{h}</span>
@@ -311,16 +328,16 @@ export default function Index() {
       </section>
 
       {/* Appel à l'action */}
-      <section className="py-20 px-6">
+      <section className="py-12 sm:py-20 px-4 sm:px-6">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-foreground mb-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
             Commencez le Dimensionnement & Vérifiez vos Calculs
           </h2>
-          <p className="text-muted-foreground mb-8">Ouvrez le calculateur, entrez les charges énergétiques pour chaque site et obtenez instantanément les résultats de dimensionnement PV et batterie.
+          <p className="text-muted-foreground mb-6 sm:mb-8 text-sm sm:text-base">Ouvrez le calculateur, entrez les charges énergétiques pour chaque site et obtenez instantanément les résultats de dimensionnement PV et batterie.
 
 
           </p>
-          <Button size="lg" onClick={() => navigate("/calculator")} className="gap-2">
+          <Button size="lg" onClick={() => navigate("/calculator")} className="gap-2 w-full sm:w-auto">
             <Calculator className="w-5 h-5" />
             Ouvrir le Calculateur
             <ChevronRight className="w-5 h-5" />
@@ -329,19 +346,19 @@ export default function Index() {
       </section>
 
       {/* Pied de page */}
-      <footer className="border-t border-border py-8 px-6">
+      <footer className="border-t border-border py-6 sm:py-8 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img
               src="https://cdn.hercules.app/file_HcgQRt87zEBLp1lXLPqQ4NdJ"
               alt="Sonatrach"
-              className="h-6 w-auto object-contain" />
+              className="h-5 sm:h-6 w-auto object-contain" />
             
-            <span className="text-sm text-muted-foreground">
+            <span className="text-xs sm:text-sm text-muted-foreground">
               Ligne GPL REB — Dimensionnement Solaire PV
             </span>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[10px] sm:text-xs text-muted-foreground text-center sm:text-left">
             © {new Date().getFullYear()} Sonatrach DC-EPM. Conforme UTE C15-712-2.
             by : Mohamed ADDA
           </p>

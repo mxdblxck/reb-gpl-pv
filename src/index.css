@@ -53,26 +53,26 @@
 
 :root {
   --radius: 0.5rem;
-  /* Sonatrach Orange Brand Theme */
-  --background: oklch(0.99 0.005 55);
-  --foreground: oklch(0.18 0.02 30);
+  /* Sonatrach Industrial Solar Theme - Professional & Clean */
+  --background: oklch(0.985 0.008 55);
+  --foreground: oklch(0.145 0.015 30);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 30);
+  --card-foreground: oklch(0.145 0.015 30);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 30);
-  /* #FF6600 → orange primary */
+  --popover-foreground: oklch(0.145 0.015 30);
+  /* Sonatrach Orange - Official Brand Color */
   --primary: oklch(0.65 0.22 41);
   --primary-foreground: oklch(1 0 0);
-  /* Light orange secondary */
-  --secondary: oklch(0.96 0.03 55);
+  /* Warm industrial secondary */
+  --secondary: oklch(0.945 0.025 55);
   --secondary-foreground: oklch(0.35 0.08 41);
-  --muted: oklch(0.96 0.01 55);
-  --muted-foreground: oklch(0.55 0.04 40);
-  --accent: oklch(0.94 0.05 50);
-  --accent-foreground: oklch(0.55 0.18 41);
+  --muted: oklch(0.945 0.015 55);
+  --muted-foreground: oklch(0.5 0.035 40);
+  --accent: oklch(0.92 0.04 50);
+  --accent-foreground: oklch(0.5 0.16 41);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.91 0.02 55);
-  --input: oklch(0.93 0.02 55);
+  --border: oklch(0.885 0.018 55);
+  --input: oklch(0.91 0.018 55);
   --ring: oklch(0.65 0.22 41);
   --chart-1: oklch(0.65 0.22 41);
   --chart-2: oklch(0.72 0.18 60);

@@ -1,10 +1,6 @@
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api.js";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { useState } from "react";
-import { Authenticated, Unauthenticated } from "convex/react";
-import { SignInButton } from "@/components/ui/signin.tsx";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import {
@@ -17,7 +13,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog.tsx";
-import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import {
   Sun,
@@ -30,16 +25,38 @@ import {
   Battery,
 } from "lucide-react";
 import { toast } from "sonner";
-import { ConvexError } from "convex/values";
-import { calculateSite, getSiteFullName } from "@/lib/solar-calc.ts";
-import type { Doc } from "@/convex/_generated/dataModel.d.ts";
+import { calculateSite, getSiteFullName, SITES } from "@/lib/solar-calc.ts";
+import type { SiteParams } from "@/lib/solar-calc.ts";
+
+// Local storage types
+interface LocalProject {
+  id: string;
+  name: string;
+  description?: string;
+  notes?: string;
+  sites: SiteParams[];
+  updatedAt: string;
+}
+
+function loadProjects(): LocalProject[] {
+  try {
+    const stored = localStorage.getItem("solar_projects");
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveProjects(projects: LocalProject[]): void {
+  localStorage.setItem("solar_projects", JSON.stringify(projects));
+}
 
 function ProjectCard({
   project,
   onDelete,
   onLoad,
 }: {
-  project: Doc<"projects">;
+  project: LocalProject;
   onDelete: () => void;
   onLoad: () => void;
 }) {
@@ -133,165 +150,30 @@ function ProjectCard({
   );
 }
 
-function DashboardInner() {
+export default function DashboardPage() {
   const navigate = useNavigate();
-  const projects = useQuery(api.projects.listProjects, {});
-  const deleteProject = useMutation(api.projects.deleteProject);
+  const [projects, setProjects] = useState<LocalProject[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleDelete = async () => {
+  // Load projects from localStorage on mount
+  useEffect(() => {
+    setProjects(loadProjects());
+    setIsLoading(false);
+  }, []);
+
+  const handleDelete = () => {
     if (!deleteId) return;
-    try {
-      await deleteProject({
-        projectId: deleteId as Parameters<typeof deleteProject>[0]["projectId"],
-      });
-      toast.success("Projet supprimé.");
-    } catch (err) {
-      if (err instanceof ConvexError) {
-        const data = err.data as { message: string };
-        toast.error(data.message);
-      } else {
-        toast.error("Échec de la suppression du projet.");
-      }
-    }
+    const updatedProjects = projects.filter((p) => p.id !== deleteId);
+    setProjects(updatedProjects);
+    saveProjects(updatedProjects);
+    toast.success("Projet supprimé.");
     setDeleteId(null);
   };
 
-  const handleLoad = (project: Doc<"projects">) => {
-    sessionStorage.setItem("loadedProject", JSON.stringify(project));
-    navigate("/calculator/project/" + project._id);
+  const handleLoad = (project: LocalProject) => {
+    navigate("/calculator/project/" + project.id);
   };
-
-  // Suppress unused variable warning
-  void getSiteFullName;
-
-  return (
-    <div className="space-y-6">
-      {/* Ligne de statistiques */}
-      {projects && projects.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <Card>
-            <CardContent className="py-4">
-              <div className="text-2xl font-bold text-primary">
-                {projects.length}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                Projets Sauvegardés
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="py-4">
-              <div className="text-2xl font-bold text-primary">
-                {projects.reduce((sum, p) => {
-                  return sum + p.sites.filter((s) => s.energyLoad > 0).length;
-                }, 0)}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                Sites Actifs Dimensionnés
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="hidden sm:block">
-            <CardContent className="py-4">
-              <div className="text-2xl font-bold text-primary">
-                {projects
-                  .reduce((sum, p) => {
-                    return (
-                      sum +
-                      p.sites
-                        .filter((s) => s.energyLoad > 0)
-                        .reduce((s2, site) => {
-                          const r = calculateSite(site);
-                          return s2 + r.pv.totalModules;
-                        }, 0)
-                    );
-                  }, 0)}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                Total Modules Dimensionnés
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Grille des projets */}
-      {projects === undefined ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-48 w-full rounded-xl" />
-          ))}
-        </div>
-      ) : projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
-            <FolderOpen className="w-8 h-8 text-primary" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-foreground mb-1">
-              Aucun projet pour l'instant
-            </h3>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              Démarrez un nouveau calcul de dimensionnement et sauvegardez-le dans votre bibliothèque de projets
-            </p>
-          </div>
-          <Button
-            onClick={() => navigate("/calculator")}
-            className="gap-1.5"
-          >
-            <Calculator className="w-4 h-4" />
-            Nouveau Calcul
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((project, i) => (
-            <motion.div
-              key={project._id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06 }}
-            >
-              <ProjectCard
-                project={project}
-                onDelete={() => setDeleteId(project._id)}
-                onLoad={() => handleLoad(project)}
-              />
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      <AlertDialog
-        open={!!deleteId}
-        onOpenChange={(o) => !o && setDeleteId(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer le Projet ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible. Le projet et toutes ses données de
-              dimensionnement seront définitivement supprimés.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
-}
-
-export default function DashboardPage() {
-  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background">
@@ -327,25 +209,127 @@ export default function DashboardPage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <Authenticated>
-          <DashboardInner />
-        </Authenticated>
-        <Unauthenticated>
-          <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
-              <Sun className="w-8 h-8 text-primary" />
+        <div className="space-y-6">
+          {/* Ligne de statistiques */}
+          {projects.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <Card>
+                <CardContent className="py-4">
+                  <div className="text-2xl font-bold text-primary">
+                    {projects.length}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    Projets Sauvegardés
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="py-4">
+                  <div className="text-2xl font-bold text-primary">
+                    {projects.reduce((sum, p) => {
+                      return sum + p.sites.filter((s) => s.energyLoad > 0).length;
+                    }, 0)}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    Sites Actifs Dimensionnés
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="hidden sm:block">
+                <CardContent className="py-4">
+                  <div className="text-2xl font-bold text-primary">
+                    {projects
+                      .reduce((sum, p) => {
+                        return (
+                          sum +
+                          p.sites
+                            .filter((s) => s.energyLoad > 0)
+                            .reduce((s2, site) => {
+                              const r = calculateSite(site);
+                              return s2 + r.pv.totalModules;
+                            }, 0)
+                        );
+                      }, 0)}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    Total Modules Dimensionnés
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <div>
-              <h3 className="font-semibold text-foreground mb-1">
-                Connectez-vous pour accéder à vos projets
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Sauvegardez et gérez tous vos projets de dimensionnement PV
-              </p>
+          )}
+
+          {/* Grille des projets */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-48 bg-muted/30 rounded-xl animate-pulse" />
+              ))}
             </div>
-            <SignInButton />
-          </div>
-        </Unauthenticated>
+          ) : projects.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
+              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
+                <FolderOpen className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-1">
+                  Aucun projet pour l'instant
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-xs">
+                  Démarrez un nouveau calcul de dimensionnement et sauvegardez-le dans votre bibliothèque de projets
+                </p>
+              </div>
+              <Button
+                onClick={() => navigate("/calculator")}
+                className="gap-1.5"
+              >
+                <Calculator className="w-4 h-4" />
+                Nouveau Calcul
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projects.map((project, i) => (
+                <motion.div
+                  key={project.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                >
+                  <ProjectCard
+                    project={project}
+                    onDelete={() => setDeleteId(project.id)}
+                    onLoad={() => handleLoad(project)}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <AlertDialog
+          open={!!deleteId}
+          onOpenChange={(o) => !o && setDeleteId(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer le Projet ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est irréversible. Le projet et toutes ses données de
+                dimensionnement seront définitivement supprimés.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
