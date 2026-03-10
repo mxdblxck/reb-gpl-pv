@@ -28,24 +28,24 @@ export default function SiteResultCard({ result }: Props) {
     {
       label: "Puissance PV Requise",
       value: formatWp(pv.pvRequiredWp),
-      sub: `E / (PSH × PR) = ${correctedEnergyLoad.toFixed(0)} / (${params.psh} × ${params.pr})`,
+      sub: `E / (PSH * PR) = ${correctedEnergyLoad.toFixed(0)} / (${params.psh} * ${params.pr})`,
     },
     {
       label: "Puissance PV Installée",
       value: formatWp(pv.actualPvPower),
       highlight: true,
-      sub: `${pv.totalModules} × ${params.modulePower} Wp`,
+      sub: `${pv.totalModules} * ${params.modulePower} Wp`,
     },
     {
       label: "Nombre de Modules",
       value: `${pv.totalModules} modules`,
-      sub: `${pv.nModulesPerGroup} par groupe × ${params.groups} groupe(s)`,
+      sub: `${pv.nModulesPerGroup} par groupe * ${params.groups} groupe(s)`,
     },
     {
       label: "Configuration",
       value: pv.configLabel,
       highlight: true,
-      sub: "Groupes × Série × Parallèle",
+      sub: "Groupes * Série * Parallèle",
     },
     {
       label: "Modules en Série par String",
@@ -63,7 +63,7 @@ export default function SiteResultCard({ result }: Props) {
     {
       label: "Capacité Requise",
       value: formatAh(battery.capacityAh),
-      sub: `(E × ${params.autonomy}j) / (${params.dod} × ${params.batteryEfficiency} × ${params.systemVoltage}V)`,
+      sub: `(E * ${params.autonomy}j) / (${params.dod} * ${params.batteryEfficiency} * ${params.systemVoltage}V)`,
     },
     {
       label: "Énergie Requise",
@@ -74,7 +74,7 @@ export default function SiteResultCard({ result }: Props) {
       label: "Capacité Installée",
       value: formatAh(battery.actualCapacityAh),
       highlight: true,
-      sub: `${battery.parallelBranches} branche(s) × ${params.unitaryBatteryCapacity} Ah`,
+      sub: `${battery.parallelBranches} branche(s) * ${params.unitaryBatteryCapacity} Ah`,
     },
     {
       label: "Énergie Installée",
@@ -91,12 +91,12 @@ export default function SiteResultCard({ result }: Props) {
       label: "Configuration",
       value: battery.configLabel,
       highlight: true,
-      sub: "Série × Parallèle (Ni-Cad)",
+      sub: "Série * Parallèle (Ni-Cad)",
     },
     {
       label: "Total Cellules",
       value: `${battery.totalCells} cellules`,
-      sub: `${battery.cellsInSeries}S × ${battery.parallelBranches}P`,
+      sub: `${battery.cellsInSeries}S * ${battery.parallelBranches}P`,
     },
   ];
 
@@ -110,7 +110,7 @@ export default function SiteResultCard({ result }: Props) {
         </Badge>
         {simultaneityFactor > 1 && (
           <Badge className="bg-amber-500/10 text-amber-700 border-amber-300">
-            Simultanéité ×{simultaneityFactor}
+            Simultanéité x{simultaneityFactor}
           </Badge>
         )}
         <Badge className="bg-muted text-muted-foreground border-border">
@@ -320,8 +320,8 @@ function RechargeTimeCard({ result }: { result: SiteResult }) {
           </p>
           <p>
             <span className="text-primary font-semibold">P_pv_net</span>
-            {" = P_installée × PR = "}
-            {result.pv.actualPvPower.toFixed(0)} × {result.params.pr}
+            {" = P_installée * PR = "}
+            {result.pv.actualPvPower.toFixed(0)} * {result.params.pr}
             {" = "}
             <strong className="text-foreground">{pPvNet.toFixed(0)} W</strong>
           </p>
@@ -334,20 +334,20 @@ function RechargeTimeCard({ result }: { result: SiteResult }) {
           </p>
           <p>
             <span className="text-primary font-semibold">E_recharge_j</span>
-            {" = (P_pv_net − P_charge_moy) × PSH"}
+            {" = (P_pv_net − P_charge_moy) * PSH"}
           </p>
           <p>
             <span className="text-primary font-semibold">T_charge</span>
-            {" = E_autonomie / (E_recharge_j × η_batt)"}
+            {" = E_autonomie / (E_recharge_j * η_batt)"}
           </p>
           <div className="border-t border-border/50 pt-1.5 flex flex-wrap gap-x-4 gap-y-0.5">
             <span>
-              E_autonomie = {result.correctedEnergyLoad.toFixed(0)} × {result.params.autonomy}j
+              E_autonomie = {result.correctedEnergyLoad.toFixed(0)} * {result.params.autonomy}j
               {" = "}
               <strong className="text-foreground">{formatWh(eAutonomieConsommee)}</strong>
             </span>
             <span>
-              E_batt = {result.params.systemVoltage}V × {result.battery.actualCapacityAh}Ah
+              E_batt = {result.params.systemVoltage}V * {result.battery.actualCapacityAh}Ah
               {" = "}
               <strong className="text-foreground">{formatWh(batteryEnergyWh)}</strong>
             </span>

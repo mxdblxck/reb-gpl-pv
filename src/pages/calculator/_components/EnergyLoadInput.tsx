@@ -29,61 +29,46 @@ type Props = {
 
 // ── Charges prédéfinies par site ───────────────────────────────────────────────
 
-// Charges génériques (disponibles pour tous les sites)
-const GENERIC_PRESETS = [
-  { name: "PLC / RTU", power: 30, hours: 24, quantity: 1 },
-  { name: "Radio / Modem", power: 20, hours: 24, quantity: 1 },
-  { name: "Capteurs (pression/temp)", power: 5, hours: 24, quantity: 4 },
-  { name: "Panneau ESD", power: 50, hours: 24, quantity: 1 },
-  { name: "Éclairage (LED)", power: 40, hours: 12, quantity: 2 },
-  { name: "Terminal SCADA", power: 60, hours: 8, quantity: 1 },
-  { name: "Chargeur UPS", power: 80, hours: 24, quantity: 1 },
-  { name: "Détecteur Feu & Gaz", power: 10, hours: 24, quantity: 1 },
-  { name: "Caméra CCTV", power: 15, hours: 24, quantity: 2 },
-  { name: "Actionneur Vanne", power: 25, hours: 4, quantity: 1 },
-  { name: "Vanne Motorisée", power: 50, hours: 2, quantity: 1 },
-  { name: "Pompe Hydraulique", power: 200, hours: 1, quantity: 1 },
-  { name: "Système Antigrêle", power: 100, hours: 1, quantity: 1 },
-];
-
-// Charges spécifiques par site
-const SITE_PRESETS: Record<string, typeof GENERIC_PRESETS> = {
+// Charges spécifiques par site (issues des études de détails REB GPL)
+const SITE_PRESETS: Record<string, { name: string; power: number; hours: number; quantity: number }[]> = {
   BVS1: [
-    { name: "PLC / RTU", power: 30, hours: 24, quantity: 1 },
-    { name: "Radio / Modem", power: 20, hours: 24, quantity: 1 },
-    { name: "Capteurs P/T", power: 5, hours: 24, quantity: 4 },
-    { name: "Panneau ESD", power: 50, hours: 24, quantity: 1 },
-    { name: "Éclairage LED", power: 40, hours: 12, quantity: 2 },
-    { name: "Détecteur F&G", power: 10, hours: 24, quantity: 2 },
-    { name: "Caméra CCTV", power: 15, hours: 24, quantity: 1 },
+    { name: "24VDC DC/DC Converter", power: 136.8, hours: 24, quantity: 1 },
+    { name: "Laptop charging", power: 150, hours: 1, quantity: 1 },
+    { name: "Puissance moteur", power: 392, hours: 0.1, quantity: 1 },
+    { name: "Composants internes", power: 70, hours: 24, quantity: 1 },
+    { name: "Protection cathodique", power: 240, hours: 24, quantity: 1 },
+    { name: "Local batteries", power: 40, hours: 1, quantity: 1 },
+    { name: "Extracteur", power: 300, hours: 1, quantity: 1 },
+    { name: "Armoire telecom", power: 177.2, hours: 24, quantity: 1 },
   ],
   BVS2: [
-    { name: "PLC / RTU", power: 30, hours: 24, quantity: 1 },
-    { name: "Radio / Modem", power: 20, hours: 24, quantity: 1 },
-    { name: "Capteurs P/T", power: 5, hours: 24, quantity: 4 },
-    { name: "Panneau ESD", power: 50, hours: 24, quantity: 1 },
-    { name: "Éclairage LED", power: 40, hours: 12, quantity: 2 },
-    { name: "Détecteur F&G", power: 10, hours: 24, quantity: 2 },
-    { name: "Caméra CCTV", power: 15, hours: 24, quantity: 1 },
-    { name: "Vanne Motorisée", power: 50, hours: 2, quantity: 2 },
+    { name: "24VDC DC/DC Converter", power: 136.8, hours: 24, quantity: 1 },
+    { name: "Laptop charging", power: 150, hours: 1, quantity: 1 },
+    { name: "Puissance moteur", power: 392, hours: 0.1, quantity: 1 },
+    { name: "Composants internes", power: 70, hours: 24, quantity: 1 },
+    { name: "Local batteries", power: 40, hours: 1, quantity: 1 },
+    { name: "Extracteur", power: 300, hours: 1, quantity: 1 },
+    { name: "Armoire telecom", power: 177.2, hours: 24, quantity: 1 },
   ],
   TA: [
-    { name: "PLC / RTU", power: 30, hours: 24, quantity: 2 },
-    { name: "Radio / Modem", power: 20, hours: 24, quantity: 1 },
-    { name: "Terminal SCADA", power: 60, hours: 24, quantity: 1 },
-    { name: "Capteurs P/T", power: 5, hours: 24, quantity: 8 },
-    { name: "Panneau ESD", power: 50, hours: 24, quantity: 1 },
-    { name: "Éclairage LED", power: 40, hours: 12, quantity: 4 },
-    { name: "Détecteur F&G", power: 10, hours: 24, quantity: 4 },
-    { name: "Caméra CCTV", power: 15, hours: 24, quantity: 3 },
-    { name: "Vanne Motorisée", power: 50, hours: 2, quantity: 3 },
-    { name: "Pompe Hydraulique", power: 200, hours: 1, quantity: 1 },
+    { name: "24VDC DC/DC Converter", power: 136.8, hours: 24, quantity: 1 },
+    { name: "Laptop charging", power: 150, hours: 1, quantity: 1 },
+    { name: "Puissance moteur", power: 392, hours: 0.1, quantity: 1 },
+    { name: "Composants internes", power: 70, hours: 24, quantity: 1 },
+    { name: "Protection cathodique", power: 240, hours: 24, quantity: 1 },
+    { name: "Local batteries", power: 40, hours: 1, quantity: 1 },
+    { name: "Extracteur", power: 300, hours: 1, quantity: 1 },
+    { name: "Skid de filtration", power: 3, hours: 24, quantity: 1 },
+    { name: "Skid de comptage", power: 171.65, hours: 24, quantity: 1 },
+    { name: "Debitmetre coriolis", power: 0, hours: 0, quantity: 1 },
+    { name: "Armoire telecom", power: 180, hours: 24, quantity: 1 },
+    { name: "Circuit chauffage comptage", power: 150, hours: 24, quantity: 1 },
   ],
 };
 
 // Obtenir les charges prédéfinies pour un site
-function getPresetsForSite(siteId: string): typeof GENERIC_PRESETS {
-  return SITE_PRESETS[siteId] || GENERIC_PRESETS;
+function getPresetsForSite(siteId: string) {
+  return SITE_PRESETS[siteId] || [];
 }
 
 function newItem(): LoadItem {

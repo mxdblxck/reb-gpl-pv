@@ -21,6 +21,7 @@ type FieldDef = {
   label: string;
   unit: string;
   min: number;
+  max?: number;
   step: number;
   tooltip: string;
 };
@@ -88,7 +89,7 @@ const fields: FieldDef[] = [
     unit: "V",
     min: 0.1,
     step: 0.01,
-    tooltip: "Tension nominale de cellule — 1,2 V Ni-Cad",
+    tooltip: "Tension nominale de cellule — 1.2 V Ni-Cad",
   },
   {
     key: "unitaryBatteryCapacity",
@@ -106,6 +107,15 @@ const fields: FieldDef[] = [
     step: 12,
     tooltip: "Tension bus DC — 48 V pour tous les sites",
   },
+  {
+    key: "margin",
+    label: "Marge (%)",
+    unit: "%",
+    min: 0,
+    max: 100,
+    step: 5,
+    tooltip: "Marge de sécurité en pourcentage — 20% par défaut",
+  },
 ];
 
 export default function SiteParamsForm({ params, onChange }: Props) {
@@ -114,7 +124,9 @@ export default function SiteParamsForm({ params, onChange }: Props) {
   const handleChange = (key: keyof SiteParams, value: string) => {
     const num = parseFloat(value);
     if (!isNaN(num)) {
-      onChange({ ...params, [key]: num });
+      // Convert margin from percentage to decimal
+      const finalValue = key === "margin" ? num / 100 : num;
+      onChange({ ...params, [key]: finalValue });
     }
   };
 
@@ -166,7 +178,8 @@ export default function SiteParamsForm({ params, onChange }: Props) {
                   type="number"
                   min={f.min}
                   step={f.step}
-                  value={params[f.key] as number}
+                  // For margin, display as percentage (value * 100), but store as decimal
+                  value={f.key === "margin" ? ((params[f.key] as number) * 100) : (params[f.key] as number)}
                   onChange={(e) => handleChange(f.key, e.target.value)}
                   className="h-8 text-sm"
                   title={f.tooltip}

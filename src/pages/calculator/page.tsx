@@ -236,12 +236,12 @@ export default function ProjectPage() {
               <div className="flex items-start gap-3">
                 <Info className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                 <p className="text-sm text-muted-foreground">
-                  Facteur de simultanéité UTE C15-712-2 ×1,3
+                  Facteur de simultanéité UTE C15-712-2 x1.3
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
-                  {applySimultaneity ? "×1,3 appliqué" : "×1,0"}
+                  {applySimultaneity ? "x1.3 appliqué" : "x1.0"}
                 </span>
                 <Switch
                   checked={applySimultaneity}

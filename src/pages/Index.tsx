@@ -49,7 +49,7 @@ const features = [
   icon: ShieldCheck,
   title: "Norme UTE C15-712-2",
   description:
-  "Facteur de simultanéité intégré (×1,3) et valeurs PR conservatrices conformes aux normes PV françaises/algériennes."
+  "Facteur de simultanéité intégré (x1.3) et valeurs PR conservatrices conformes aux normes PV françaises/algériennes."
 }];
 
 
@@ -201,7 +201,7 @@ export default function Index() {
           {[
           { label: "Heures de Soleil Crête", value: "4.95 h", sub: "Pire mois" },
           { label: "Puissance Module", value: "555 Wp", sub: "Jinko Solar" },
-          { label: "Autonomie", value: "5 Jours", sub: "Ni-Cad DOD 0,8" }].
+          { label: "Autonomie", value: "5 Jours", sub: "Ni-Cad DOD 0.8" }].
           map((stat, i) =>
           <div
             key={i}

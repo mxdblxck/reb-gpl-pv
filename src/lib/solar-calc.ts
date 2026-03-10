@@ -16,6 +16,7 @@ export type SiteParams = {
   cellVoltage: number; // Single cell voltage V (default 1.2 V Ni-Cad)
   unitaryBatteryCapacity: number; // Single battery capacity Ah (default 1275 Ah)
   systemVoltage: number; // DC bus voltage V (default 48 V)
+  margin: number; // Safety margin percentage (default 0.2 = 20%)
 };
 
 export type PVResult = {
@@ -134,7 +135,9 @@ export function calculateSite(
   applySimultaneity = false
 ): SiteResult {
   const simultaneityFactor = applySimultaneity ? 1.3 : 1.0;
-  const correctedEnergyLoad = params.energyLoad * simultaneityFactor;
+  const margin = params.margin || 0;
+  // Apply margin and simultaneity factor to energy load
+  const correctedEnergyLoad = params.energyLoad * simultaneityFactor * (1 + margin);
 
   const correctedParams: SiteParams = {
     ...params,
@@ -175,6 +178,7 @@ export function getDefaultSiteParams(siteId: string): SiteParams {
     cellVoltage: 1.2,
     unitaryBatteryCapacity,
     systemVoltage: 48,
+    margin: 0.2, // 20% safety margin
   };
 }
 
