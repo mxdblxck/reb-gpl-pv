@@ -1,4 +1,4 @@
-import { useState, useId } from "react";
+import { useState, useId, useEffect } from "react";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
@@ -99,7 +99,13 @@ export default function EnergyLoadInput({
   const [mode, setMode] = useState<"simple" | "detailed">("simple");
   const [items, setItems] = useState<LoadItem[]>([newItem()]);
   const [showPresets, setShowPresets] = useState(false);
+  const [marginInputValue, setMarginInputValue] = useState<string>(marginPercent.toString());
   const labelId = useId();
+
+  // Sync margin input value when prop changes
+  useEffect(() => {
+    setMarginInputValue(marginPercent.toString());
+  }, [marginPercent]);
 
   // Total mode détaillé (without margin)
   const detailedTotal = items.reduce((sum, it) => sum + calcEnergy(it), 0);
@@ -116,13 +122,16 @@ export default function EnergyLoadInput({
     setMode(next);
   };
 
-  // Handle margin change
-  const handleMarginChange = (newMargin: number) => {
-    if (onMarginChange) {
-      onMarginChange(newMargin);
-      // Also update the total with new margin
-      const newTotal = detailedTotal * (1 + newMargin / 100);
-      onTotalChange(newTotal);
+  // Handle margin change - allow free typing
+  const handleMarginInputChange = (value: string) => {
+    setMarginInputValue(value);
+    const num = parseFloat(value);
+    if (!isNaN(num) && num >= 0 && num <= 100) {
+      if (onMarginChange) {
+        onMarginChange(num);
+        const newTotal = detailedTotal * (1 + num / 100);
+        onTotalChange(newTotal);
+      }
     }
   };
 
@@ -408,9 +417,9 @@ export default function EnergyLoadInput({
                           type="number"
                           min={0}
                           max={100}
-                          step={5}
-                          value={marginPercent}
-                          onChange={(e) => handleMarginChange(parseFloat(e.target.value) || 0)}
+                          step={1}
+                          value={marginInputValue}
+                          onChange={(e) => handleMarginInputChange(e.target.value)}
                           className="h-6 w-16 text-xs text-center no-spinner"
                         />
                         <span className="text-xs text-primary font-medium">

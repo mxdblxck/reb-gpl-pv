@@ -120,14 +120,37 @@ const fields: FieldDef[] = [
 
 export default function SiteParamsForm({ params, onChange }: Props) {
   const [isOpen, setIsOpen] = useState(false);
+  const [inputValues, setInputValues] = useState<Record<string, string>>({});
+
+  // Initialize input values from params
+  const getInputValue = (key: string, defaultVal: number): string => {
+    if (inputValues[key] !== undefined) return inputValues[key];
+    return key === "margin" ? (defaultVal * 100).toString() : defaultVal.toString();
+  };
 
   const handleChange = (key: keyof SiteParams, value: string) => {
+    // Store raw value in local state to allow free editing
+    setInputValues((prev) => ({ ...prev, [key]: value }));
+    
     const num = parseFloat(value);
     if (!isNaN(num)) {
       // Convert margin from percentage to decimal
       const finalValue = key === "margin" ? num / 100 : num;
       onChange({ ...params, [key]: finalValue });
+    } else if (value === "") {
+      // Allow clearing the input
+      const finalValue = key === "margin" ? 0 : 0;
+      onChange({ ...params, [key]: finalValue });
     }
+  };
+
+  const handleBlur = (key: keyof SiteParams) => {
+    // Reset to current param value on blur
+    setInputValues((prev) => {
+      const newVals = { ...prev };
+      delete newVals[key];
+      return newVals;
+    });
   };
 
   const handleReset = () => {
@@ -180,8 +203,9 @@ export default function SiteParamsForm({ params, onChange }: Props) {
                   // Remove spinner buttons with CSS, allow decimal points
                   style={{ WebkitAppearance: "textfield", MozAppearance: "textfield" }}
                   // For margin, display as percentage (value * 100), but store as decimal
-                  value={f.key === "margin" ? ((params[f.key] as number) * 100) : (params[f.key] as number)}
+                  value={getInputValue(f.key, params[f.key] as number)}
                   onChange={(e) => handleChange(f.key, e.target.value)}
+                  onBlur={() => handleBlur(f.key)}
                   className="h-8 text-sm no-spinner"
                   title={f.tooltip}
                 />
