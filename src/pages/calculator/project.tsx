@@ -65,6 +65,13 @@ export default function ProjectPage() {
     }));
   };
 
+  const handleMarginChange = (siteId: string, percent: number) => {
+    setSiteParams((prev) => ({
+      ...prev,
+      [siteId]: { ...prev[siteId], margin: percent / 100 },
+    }));
+  };
+
   const handleParamsChange = (siteId: string, updated: SiteParams) => {
     setSiteParams((prev) => ({ ...prev, [siteId]: updated }));
   };
@@ -257,6 +264,8 @@ export default function ProjectPage() {
                       siteId={sid}
                       totalWh={siteParams[sid].energyLoad}
                       onTotalChange={(wh) => handleEnergyChange(sid, wh)}
+                      marginPercent={(siteParams[sid].margin || 0) * 100}
+                      onMarginChange={(percent) => handleMarginChange(sid, percent)}
                     />
                     <SiteParamsForm
                       params={siteParams[sid]}

@@ -25,6 +25,8 @@ type Props = {
   siteId: string;
   totalWh: number; // valeur contrôlée pour le mode simple
   onTotalChange: (wh: number) => void;
+  marginPercent?: number; // Current margin percentage (0-100)
+  onMarginChange?: (percent: number) => void;
 };
 
 // ── Charges prédéfinies par site ───────────────────────────────────────────────
@@ -87,22 +89,41 @@ function calcEnergy(item: LoadItem): number {
 
 // ── Composant Principal ────────────────────────────────────────────────────────
 
-export default function EnergyLoadInput({ siteId, totalWh, onTotalChange }: Props) {
+export default function EnergyLoadInput({ 
+  siteId, 
+  totalWh, 
+  onTotalChange,
+  marginPercent = 0,
+  onMarginChange
+}: Props) {
   const [mode, setMode] = useState<"simple" | "detailed">("simple");
   const [items, setItems] = useState<LoadItem[]>([newItem()]);
   const [showPresets, setShowPresets] = useState(false);
   const labelId = useId();
 
-  // Total mode détaillé
+  // Total mode détaillé (without margin)
   const detailedTotal = items.reduce((sum, it) => sum + calcEnergy(it), 0);
+  
+  // Total with margin applied
+  const totalWithMargin = detailedTotal * (1 + marginPercent / 100);
 
   // Lors du passage en mode simple depuis le mode détaillé, synchroniser le total
   const handleModeChange = (v: string) => {
     const next = v as "simple" | "detailed";
     if (next === "simple" && mode === "detailed") {
-      onTotalChange(detailedTotal);
+      onTotalChange(totalWithMargin);
     }
     setMode(next);
+  };
+
+  // Handle margin change
+  const handleMarginChange = (newMargin: number) => {
+    if (onMarginChange) {
+      onMarginChange(newMargin);
+      // Also update the total with new margin
+      const newTotal = detailedTotal * (1 + newMargin / 100);
+      onTotalChange(newTotal);
+    }
   };
 
   // Mettre à jour un champ d'une ligne de charge
@@ -123,7 +144,7 @@ export default function EnergyLoadInput({ siteId, totalWh, onTotalChange }: Prop
         const num = typeof value === "number" ? value : parseFloat(value as string);
         return { ...it, [field]: isNaN(num) ? 0 : num };
       });
-      const total = updated.reduce((s, i) => s + calcEnergy(i), 0);
+      const total = updated.reduce((s, i) => s + calcEnergy(i), 0) * (1 + marginPercent / 100);
       onTotalChange(total);
       return updated;
     });
@@ -134,7 +155,7 @@ export default function EnergyLoadInput({ siteId, totalWh, onTotalChange }: Prop
   const removeItem = (id: string) => {
     setItems((prev) => {
       const next = prev.filter((it) => it.id !== id);
-      const total = next.reduce((s, i) => s + calcEnergy(i), 0);
+      const total = next.reduce((s, i) => s + calcEnergy(i), 0) * (1 + marginPercent / 100);
       onTotalChange(total);
       return next.length === 0 ? [newItem()] : next;
     });
@@ -378,10 +399,31 @@ export default function EnergyLoadInput({ siteId, totalWh, onTotalChange }: Prop
                 </tr>
                 {detailedTotal > 0 && (
                   <tr className="bg-primary/5">
-                    <td colSpan={6} className="px-3 pb-2.5 text-xs text-muted-foreground">
-                      ≈ {(detailedTotal / 1000).toFixed(3)} kWh/j
-                      {" | "}
-                      {items.filter((i) => i.power > 0).length} charge(s) active(s)
+                    <td colSpan={5} className="px-3 pb-2 pt-1">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-muted-foreground whitespace-nowrap">
+                          Marge (%)
+                        </Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={5}
+                          value={marginPercent}
+                          onChange={(e) => handleMarginChange(parseFloat(e.target.value) || 0)}
+                          className="h-6 w-16 text-xs text-center"
+                        />
+                        <span className="text-xs text-primary font-medium">
+                          +{marginPercent}% → {(detailedTotal * (1 + marginPercent / 100)).toFixed(0)} Wh/j
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 pb-2 pt-1 text-right">
+                      <span className="text-xs text-muted-foreground">
+                        ≈ {(detailedTotal / 1000).toFixed(3)} kWh/j
+                        {" | "}
+                        {items.filter((i) => i.power > 0).length} charge(s)
+                      </span>
                     </td>
                   </tr>
                 )}
