@@ -176,12 +176,13 @@ export default function SiteParamsForm({ params, onChange }: Props) {
                 </Label>
                 <Input
                   type="number"
-                  min={f.min}
                   step={f.step}
+                  // Remove spinner buttons with CSS, allow decimal points
+                  style={{ WebkitAppearance: "textfield", MozAppearance: "textfield" }}
                   // For margin, display as percentage (value * 100), but store as decimal
                   value={f.key === "margin" ? ((params[f.key] as number) * 100) : (params[f.key] as number)}
                   onChange={(e) => handleChange(f.key, e.target.value)}
-                  className="h-8 text-sm"
+                  className="h-8 text-sm no-spinner"
                   title={f.tooltip}
                 />
               </div>

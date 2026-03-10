@@ -235,7 +235,7 @@ export default function EnergyLoadInput({
                 const num = parseFloat(e.target.value);
                 onTotalChange(isNaN(num) ? 0 : num);
               }}
-              className="max-w-xs text-base font-semibold"
+              className="max-w-xs text-base font-semibold no-spinner"
               aria-labelledby={labelId}
             />
             <span className="text-sm text-muted-foreground">Wh/j</span>
@@ -331,7 +331,7 @@ export default function EnergyLoadInput({
                           value={item.power === 0 ? "" : item.power}
                           placeholder="0"
                           onChange={(e) => updateItem(item.id, "power", e.target.value)}
-                          className="h-7 text-xs text-center border-0 bg-transparent focus:bg-background focus:border focus:border-border"
+                          className="h-7 text-xs text-center border-0 bg-transparent focus:bg-background focus:border focus:border-border no-spinner"
                         />
                       </td>
                       <td className="px-2 py-1.5">
@@ -342,7 +342,7 @@ export default function EnergyLoadInput({
                           step={0.5}
                           value={item.hours}
                           onChange={(e) => updateItem(item.id, "hours", e.target.value)}
-                          className="h-7 text-xs text-center border-0 bg-transparent focus:bg-background focus:border focus:border-border"
+                          className="h-7 text-xs text-center border-0 bg-transparent focus:bg-background focus:border focus:border-border no-spinner"
                         />
                       </td>
                       <td className="px-2 py-1.5">
@@ -352,7 +352,7 @@ export default function EnergyLoadInput({
                           step={1}
                           value={item.quantity}
                           onChange={(e) => updateItem(item.id, "quantity", e.target.value)}
-                          className="h-7 text-xs text-center border-0 bg-transparent focus:bg-background focus:border focus:border-border"
+                          className="h-7 text-xs text-center border-0 bg-transparent focus:bg-background focus:border focus:border-border no-spinner"
                         />
                       </td>
                       <td className="px-3 py-1.5 text-right">
@@ -397,7 +397,7 @@ export default function EnergyLoadInput({
                   </td>
                   <td />
                 </tr>
-                {detailedTotal > 0 && (
+                {mode === "detailed" && (
                   <tr className="bg-primary/5">
                     <td colSpan={5} className="px-3 pb-2 pt-1">
                       <div className="flex items-center gap-2">
@@ -411,7 +411,7 @@ export default function EnergyLoadInput({
                           step={5}
                           value={marginPercent}
                           onChange={(e) => handleMarginChange(parseFloat(e.target.value) || 0)}
-                          className="h-6 w-16 text-xs text-center"
+                          className="h-6 w-16 text-xs text-center no-spinner"
                         />
                         <span className="text-xs text-primary font-medium">
                           +{marginPercent}% → {(detailedTotal * (1 + marginPercent / 100)).toFixed(0)} Wh/j
@@ -420,8 +420,12 @@ export default function EnergyLoadInput({
                     </td>
                     <td className="px-3 pb-2 pt-1 text-right">
                       <span className="text-xs text-muted-foreground">
-                        ≈ {(detailedTotal / 1000).toFixed(3)} kWh/j
-                        {" | "}
+                        {detailedTotal > 0 && (
+                          <>
+                            ≈ {(detailedTotal / 1000).toFixed(3)} kWh/j
+                            {" | "}
+                          </>
+                        )}
                         {items.filter((i) => i.power > 0).length} charge(s)
                       </span>
                     </td>
