@@ -32,7 +32,7 @@ const fields: FieldDef[] = [
     unit: "h/j",
     min: 0.1,
     step: 0.01,
-    tooltip: "Heures de soleil crête pire mois pour REB : 4,95 h",
+    tooltip: "Heures de soleil crête pire mois pour REB : 4.95 h",
   },
   {
     key: "pr",
@@ -40,7 +40,7 @@ const fields: FieldDef[] = [
     unit: "",
     min: 0.1,
     step: 0.01,
-    tooltip: "Facteur de pertes système — 0,72 conservateur",
+    tooltip: "Facteur de pertes système — 0.72 conservateur",
   },
   {
     key: "modulePower",
@@ -72,7 +72,7 @@ const fields: FieldDef[] = [
     unit: "",
     min: 0.1,
     step: 0.01,
-    tooltip: "Fraction de décharge maximale — 0,8 pour Ni-Cad",
+    tooltip: "Fraction de décharge maximale — 0.8 pour Ni-Cad",
   },
   {
     key: "batteryEfficiency",
@@ -80,7 +80,7 @@ const fields: FieldDef[] = [
     unit: "",
     min: 0.1,
     step: 0.01,
-    tooltip: "Rendement charge/décharge — 0,85",
+    tooltip: "Rendement charge/décharge — 0.85",
   },
   {
     key: "cellVoltage",

@@ -162,36 +162,36 @@ export default function ProjectPage() {
     <div className="min-h-screen bg-background">
       {/* En-tête */}
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-sm border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+        <div className="max-w-6xl mx-auto px-2 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Button
               size="sm"
               onClick={() => navigate("/dashboard")}
-              className="border border-border bg-transparent text-muted-foreground hover:bg-muted h-8 px-2"
+              className="border border-border bg-transparent text-muted-foreground hover:bg-muted h-8 px-1.5 sm:px-2 shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />
             </Button>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <div className="w-5 h-5 bg-primary rounded flex items-center justify-center">
+                <div className="w-5 h-5 bg-primary rounded flex items-center justify-center shrink-0">
                   <Sun className="w-3 h-3 text-white" />
                 </div>
-                <span className="font-semibold text-sm text-foreground">
+                <span className="font-semibold text-sm text-foreground truncate max-w-[120px] sm:max-w-none">
                   {project ? project.name : "Nouveau Projet"}
                 </span>
               </div>
               {project?.description && (
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[10px] text-muted-foreground truncate max-w-[120px] sm:max-w-none">
                   {project.description}
                 </p>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <Button
               size="sm"
               onClick={handleExportPDF}
-              className="h-8 gap-1 border border-border bg-transparent text-muted-foreground hover:bg-muted text-xs"
+              className="h-8 gap-1 border border-border bg-transparent text-muted-foreground hover:bg-muted text-xs px-1.5 sm:px-2"
             >
               <Download className="w-3 h-3" />
               <span className="hidden sm:inline">PDF</span>

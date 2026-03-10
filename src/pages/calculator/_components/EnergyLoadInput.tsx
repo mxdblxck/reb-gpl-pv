@@ -27,9 +27,10 @@ type Props = {
   onTotalChange: (wh: number) => void;
 };
 
-// ── Charges prédéfinies pour ajout rapide ─────────────────────────────────────
+// ── Charges prédéfinies par site ───────────────────────────────────────────────
 
-const PRESET_LOADS = [
+// Charges génériques (disponibles pour tous les sites)
+const GENERIC_PRESETS = [
   { name: "PLC / RTU", power: 30, hours: 24, quantity: 1 },
   { name: "Radio / Modem", power: 20, hours: 24, quantity: 1 },
   { name: "Capteurs (pression/temp)", power: 5, hours: 24, quantity: 4 },
@@ -39,8 +40,51 @@ const PRESET_LOADS = [
   { name: "Chargeur UPS", power: 80, hours: 24, quantity: 1 },
   { name: "Détecteur Feu & Gaz", power: 10, hours: 24, quantity: 1 },
   { name: "Caméra CCTV", power: 15, hours: 24, quantity: 2 },
-  { name: "Actionneur Vanne de Contrôle", power: 25, hours: 4, quantity: 1 },
+  { name: "Actionneur Vanne", power: 25, hours: 4, quantity: 1 },
+  { name: "Vanne Motorisée", power: 50, hours: 2, quantity: 1 },
+  { name: "Pompe Hydraulique", power: 200, hours: 1, quantity: 1 },
+  { name: "Système Antigrêle", power: 100, hours: 1, quantity: 1 },
 ];
+
+// Charges spécifiques par site
+const SITE_PRESETS: Record<string, typeof GENERIC_PRESETS> = {
+  BVS1: [
+    { name: "PLC / RTU", power: 30, hours: 24, quantity: 1 },
+    { name: "Radio / Modem", power: 20, hours: 24, quantity: 1 },
+    { name: "Capteurs P/T", power: 5, hours: 24, quantity: 4 },
+    { name: "Panneau ESD", power: 50, hours: 24, quantity: 1 },
+    { name: "Éclairage LED", power: 40, hours: 12, quantity: 2 },
+    { name: "Détecteur F&G", power: 10, hours: 24, quantity: 2 },
+    { name: "Caméra CCTV", power: 15, hours: 24, quantity: 1 },
+  ],
+  BVS2: [
+    { name: "PLC / RTU", power: 30, hours: 24, quantity: 1 },
+    { name: "Radio / Modem", power: 20, hours: 24, quantity: 1 },
+    { name: "Capteurs P/T", power: 5, hours: 24, quantity: 4 },
+    { name: "Panneau ESD", power: 50, hours: 24, quantity: 1 },
+    { name: "Éclairage LED", power: 40, hours: 12, quantity: 2 },
+    { name: "Détecteur F&G", power: 10, hours: 24, quantity: 2 },
+    { name: "Caméra CCTV", power: 15, hours: 24, quantity: 1 },
+    { name: "Vanne Motorisée", power: 50, hours: 2, quantity: 2 },
+  ],
+  TA: [
+    { name: "PLC / RTU", power: 30, hours: 24, quantity: 2 },
+    { name: "Radio / Modem", power: 20, hours: 24, quantity: 1 },
+    { name: "Terminal SCADA", power: 60, hours: 24, quantity: 1 },
+    { name: "Capteurs P/T", power: 5, hours: 24, quantity: 8 },
+    { name: "Panneau ESD", power: 50, hours: 24, quantity: 1 },
+    { name: "Éclairage LED", power: 40, hours: 12, quantity: 4 },
+    { name: "Détecteur F&G", power: 10, hours: 24, quantity: 4 },
+    { name: "Caméra CCTV", power: 15, hours: 24, quantity: 3 },
+    { name: "Vanne Motorisée", power: 50, hours: 2, quantity: 3 },
+    { name: "Pompe Hydraulique", power: 200, hours: 1, quantity: 1 },
+  ],
+};
+
+// Obtenir les charges prédéfinies pour un site
+function getPresetsForSite(siteId: string): typeof GENERIC_PRESETS {
+  return SITE_PRESETS[siteId] || GENERIC_PRESETS;
+}
 
 function newItem(): LoadItem {
   return {
@@ -111,7 +155,7 @@ export default function EnergyLoadInput({ siteId, totalWh, onTotalChange }: Prop
     });
   };
 
-  const addPreset = (preset: (typeof PRESET_LOADS)[number]) => {
+  const addPreset = (preset: { name: string; power: number; hours: number; quantity: number }) => {
     const item: LoadItem = {
       id: crypto.randomUUID(),
       ...preset,
@@ -130,8 +174,23 @@ export default function EnergyLoadInput({ siteId, totalWh, onTotalChange }: Prop
     setShowPresets(false);
   };
 
-  // Suppress unused variable warning
-  void siteId;
+  // Charger les charges prédéfinies du site
+  const loadSitePresets = () => {
+    const presets = getPresetsForSite(siteId);
+    const newItems = presets.map(p => ({
+      id: crypto.randomUUID(),
+      name: p.name,
+      power: p.power,
+      hours: p.hours,
+      quantity: p.quantity,
+    }));
+    setItems(newItems);
+    const total = newItems.reduce((s, i) => s + calcEnergy(i), 0);
+    onTotalChange(total);
+  };
+
+  // Obtenir les presets pour ce site
+  const sitePresets = getPresetsForSite(siteId);
 
   return (
     <div className="space-y-3">
@@ -184,24 +243,29 @@ export default function EnergyLoadInput({ siteId, totalWh, onTotalChange }: Prop
       ) : (
         /* ── Mode Détaillé ──────────────────────────────────────────────────── */
         <div className="space-y-2">
-          {/* Présélections */}
+          {/* Présélections par site et boutons */}
           <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              size="sm"
+              onClick={loadSitePresets}
+              className="h-7 text-xs gap-1 bg-primary text-white hover:bg-primary/90"
+            >
+              <Plus className="w-3 h-3" />
+              Charger charges {siteId}
+            </Button>
             <Button
               size="sm"
               onClick={() => setShowPresets((v) => !v)}
               className="h-7 text-xs gap-1 border border-border bg-muted/30 text-muted-foreground hover:bg-muted"
             >
               <Plus className="w-3 h-3" />
-              Ajout rapide prédéfini
+              + Ajouter
             </Button>
-            <span className="text-xs text-muted-foreground">
-              ou ajouter des lignes manuellement ci-dessous
-            </span>
           </div>
 
           {showPresets && (
             <div className="flex flex-wrap gap-1.5 p-3 bg-muted/20 rounded-lg border border-border">
-              {PRESET_LOADS.map((p) => (
+              {sitePresets.map((p) => (
                 <Button
                   key={p.name}
                   size="sm"

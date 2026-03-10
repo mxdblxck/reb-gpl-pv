@@ -79,11 +79,11 @@ const sites = [
 
 const highlights = [
 "Modules Jinko 555 Wp préconfigurés",
-"PSH pire mois = 4,95 h (REB)",
-"PR conservateur = 0,72",
+"PSH pire mois = 4.95 h (REB)",
+"PR conservateur = 0.72",
 "Tension système 48 V",
 "Batteries Ni-Cad",
-"DOD = 0,8 standard"];
+"DOD = 0.8 standard"];
 
 
 export default function Index() {
@@ -199,7 +199,7 @@ export default function Index() {
           className="relative max-w-3xl mx-auto mt-10 sm:mt-16 grid grid-cols-3 gap-3 sm:gap-4">
           
           {[
-          { label: "Heures de Soleil Crête", value: "4,95 h", sub: "Pire mois" },
+          { label: "Heures de Soleil Crête", value: "4.95 h", sub: "Pire mois" },
           { label: "Puissance Module", value: "555 Wp", sub: "Jinko Solar" },
           { label: "Autonomie", value: "5 Jours", sub: "Ni-Cad DOD 0,8" }].
           map((stat, i) =>
