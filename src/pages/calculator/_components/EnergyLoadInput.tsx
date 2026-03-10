@@ -109,15 +109,13 @@ export default function EnergyLoadInput({
 
   // Total mode détaillé (without margin)
   const detailedTotal = items.reduce((sum, it) => sum + calcEnergy(it), 0);
-  
-  // Total with margin applied
-  const totalWithMargin = detailedTotal * (1 + marginPercent / 100);
 
   // Lors du passage en mode simple depuis le mode détaillé, synchroniser le total
   const handleModeChange = (v: string) => {
     const next = v as "simple" | "detailed";
     if (next === "simple" && mode === "detailed") {
-      onTotalChange(totalWithMargin);
+      // Don't add margin here - solar-calc.ts handles it
+      onTotalChange(detailedTotal);
     }
     setMode(next);
   };
@@ -129,8 +127,8 @@ export default function EnergyLoadInput({
     if (!isNaN(num) && num >= 0 && num <= 100) {
       if (onMarginChange) {
         onMarginChange(num);
-        const newTotal = detailedTotal * (1 + num / 100);
-        onTotalChange(newTotal);
+        // Don't add margin here - it's already applied in solar-calc.ts
+        onTotalChange(detailedTotal);
       }
     }
   };
