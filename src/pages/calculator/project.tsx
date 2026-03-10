@@ -1,53 +1,51 @@
-import { useEffect, useState } from react;
-import { useParams, useNavigate } from react-router-dom;
-import { useQuery } from convexreact;
-import { api } from @convex_generatedapi.js;
-import { Skeleton } from @componentsuiskeleton.tsx;
-import { Button } from @componentsuibutton.tsx;
-import { ArrowLeft } from lucide-react;
-import { useMutation } from convexreact;
-import { toast } from sonner;
-import { motion } from motionreact;
-import { Tabs, TabsContent, TabsList, TabsTrigger } from @componentsuitabs.tsx;
-import { Switch } from @componentsuiswitch.tsx;
-import { Card, CardContent, CardHeader, CardTitle } from @componentsuicard.tsx;
-import { Sun, Save, Download, Info, AlertCircle } from lucide-react;
-import SiteParamsForm from @pagescalculator_componentsSiteParamsForm.tsx;
-import SiteResultCard from @pagescalculator_componentsSiteResultCard.tsx;
-import EnergyCharts from @pagescalculator_componentsEnergyCharts.tsx;
-import EnergyLoadInput from @pagescalculator_componentsEnergyLoadInput.tsx;
-import type { SiteParams, SiteResult } from @libsolar-calc.ts;
-import { SITES, getDefaultSiteParams, calculateSite, getSiteFullName } from @libsolar-calc.ts;
-import { generateSizingPDF } from @libpdf-export.ts;
-import { ConvexError } from convexvalues;
-import type { Id } from @convex_generateddataModel.d.ts;
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api.js";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { ArrowLeft, Sun, Save, Download, Info, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+import { motion } from "motion/react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
+import { Switch } from "@/components/ui/switch.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
+import SiteParamsForm from "./_components/SiteParamsForm.tsx";
+import SiteResultCard from "./_components/SiteResultCard.tsx";
+import EnergyCharts from "./_components/EnergyCharts.tsx";
+import EnergyLoadInput from "./_components/EnergyLoadInput.tsx";
+import type { SiteParams, SiteResult } from "@/lib/solar-calc.ts";
+import { SITES, getDefaultSiteParams, calculateSite, getSiteFullName } from "@/lib/solar-calc.ts";
+import { generateSizingPDF } from "@/lib/pdf-export.ts";
+import { ConvexError } from "convex/values";
+import type { Id } from "@/convex/_generated/dataModel.d.ts";
 
 export default function ProjectPage() {
-  const { id } = useParams{ id string }();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const project = useQuery(
     api.projects.getProject,
-    id  { projectId id as Idprojects }  skip
+    id ? { projectId: id as Id<"projects"> } : "skip"
   );
 
   const updateProject = useMutation(api.projects.updateProject);
 
-  const [activeTab, setActiveTab] = useState(BVS1);
+  const [activeTab, setActiveTab] = useState("BVS1");
   const [applySimultaneity, setApplySimultaneity] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [siteParams, setSiteParams] = useStateRecordstring, SiteParams(
-    () = Object.fromEntries(SITES.map((sid) = [sid, getDefaultSiteParams(sid)]))
+  const [siteParams, setSiteParams] = useState<Record<string, SiteParams>>(
+    () => Object.fromEntries(SITES.map((sid) => [sid, getDefaultSiteParams(sid)]))
   );
   const [initialized, setInitialized] = useState(false);
 
-   Charger les données du projet une seule fois
-  useEffect(() = {
+  // Charger les données du projet une seule fois
+  useEffect(() => {
     if (project && !initialized) {
-      const map Recordstring, SiteParams = Object.fromEntries(
-        SITES.map((sid) = [sid, getDefaultSiteParams(sid)])
+      const map: Record<string, SiteParams> = Object.fromEntries(
+        SITES.map((sid) => [sid, getDefaultSiteParams(sid)])
       );
-      project.sites.forEach((s) = {
+      project.sites.forEach((s: any) => {
         map[s.siteId] = s;
       });
       setSiteParams(map);
@@ -55,266 +53,266 @@ export default function ProjectPage() {
     }
   }, [project, initialized]);
 
-  const results SiteResult[] = SITES.map((sid) =
+  const results: SiteResult[] = SITES.map((sid) =>
     calculateSite(siteParams[sid], applySimultaneity)
-  ).filter((r) = r.params.energyLoad  0);
+  ).filter((r) => r.params.energyLoad > 0);
 
-  const handleEnergyChange = (siteId string, wh number) = {
-    setSiteParams((prev) = ({
+  const handleEnergyChange = (siteId: string, wh: number) => {
+    setSiteParams((prev) => ({
       ...prev,
-      [siteId] { ...prev[siteId], energyLoad wh },
+      [siteId]: { ...prev[siteId], energyLoad: wh },
     }));
   };
 
-  const handleParamsChange = (siteId string, updated SiteParams) = {
-    setSiteParams((prev) = ({ ...prev, [siteId] updated }));
+  const handleParamsChange = (siteId: string, updated: SiteParams) => {
+    setSiteParams((prev) => ({ ...prev, [siteId]: updated }));
   };
 
-  const handleSave = async () = {
+  const handleSave = async () => {
     if (!id) return;
     setIsSaving(true);
     try {
       await updateProject({
-        projectId id as Idprojects,
-        sites SITES.map((sid) = siteParams[sid]),
+        projectId: id as Id<"projects">,
+        sites: SITES.map((sid) => siteParams[sid]),
       });
-      toast.success(Projet mis à jour.);
+      toast.success("Projet mis à jour.");
     } catch (err) {
       if (err instanceof ConvexError) {
-        const data = err.data as { message string };
+        const data = err.data as { message: string };
         toast.error(data.message);
       } else {
-        toast.error(Échec de la sauvegarde des modifications.);
+        toast.error("Échec de la sauvegarde des modifications.");
       }
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleExportPDF = () = {
+  const handleExportPDF = () => {
     if (results.length === 0) {
-      toast.error(Veuillez saisir au moins une charge énergétique pour exporter.);
+      toast.error("Veuillez saisir au moins une charge énergétique pour exporter.");
       return;
     }
     try {
       generateSizingPDF(results);
-      toast.success(Rapport PDF généré.);
+      toast.success("Rapport PDF généré.");
     } catch {
-      toast.error(Échec de la génération du PDF.);
+      toast.error("Échec de la génération du PDF.");
     }
   };
 
   if (project === undefined) {
     return (
-      div className=max-w-6xl mx-auto px-4 py-8 space-y-4
-        Skeleton className=h-14 w-full 
-        Skeleton className=h-64 w-full 
-      div
+      <div className="max-w-6xl mx-auto px-4 py-8 space-y-4">
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
     );
   }
 
   if (project === null) {
     return (
-      div className=flex flex-col items-center justify-center min-h-screen gap-4
-        p className=text-muted-foregroundProjet introuvable ou accès refusé.p
-        Button onClick={() = navigate(dashboard)} className=gap-1.5
-          ArrowLeft className=w-4 h-4  Retour au Tableau de Bord
-        Button
-      div
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-muted-foreground">Projet introuvable ou accès refusé.</p>
+        <Button onClick={() => navigate("/dashboard")} className="gap-1.5">
+          <ArrowLeft className="w-4 h-4" /> Retour au Tableau de Bord
+        </Button>
+      </div>
     );
   }
 
   return (
-    div className=min-h-screen bg-background
-      { En-tête }
-      header className=sticky top-0 z-40 bg-background90 backdrop-blur-sm border-b border-border
-        div className=max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3
-          div className=flex items-center gap-3
-            Button
-              size=sm
-              onClick={() = navigate(dashboard)}
-              className=border border-border bg-transparent text-muted-foreground hoverbg-muted h-8 px-2
-            
-              ArrowLeft className=w-4 h-4 
-            Button
-            div
-              div className=flex items-center gap-2
-                div className=w-5 h-5 bg-primary rounded flex items-center justify-center
-                  Sun className=w-3 h-3 text-white 
-                div
-                span className=font-semibold text-sm text-foreground
+    <div className="min-h-screen bg-background">
+      {/* En-tête */}
+      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-sm border-b border-border">
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              onClick={() => navigate("/dashboard")}
+              className="border border-border bg-transparent text-muted-foreground hover:bg-muted h-8 px-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 bg-primary rounded flex items-center justify-center">
+                  <Sun className="w-3 h-3 text-white" />
+                </div>
+                <span className="font-semibold text-sm text-foreground">
                   {project.name}
-                span
-              div
+                </span>
+              </div>
               {project.description && (
-                p className=text-[10px] text-muted-foreground
+                <p className="text-[10px] text-muted-foreground">
                   {project.description}
-                p
+                </p>
               )}
-            div
-          div
-          div className=flex items-center gap-2
-            Button
-              size=sm
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
               onClick={handleExportPDF}
-              className=h-8 gap-1 border border-border bg-transparent text-muted-foreground hoverbg-muted text-xs
-            
-              Download className=w-3 h-3 
-              span className=hidden sminlinePDFspan
-            Button
-            Button
-              size=sm
+              className="h-8 gap-1 border border-border bg-transparent text-muted-foreground hover:bg-muted text-xs"
+            >
+              <Download className="w-3 h-3" />
+              <span className="hidden sm:inline">PDF</span>
+            </Button>
+            <Button
+              size="sm"
               onClick={handleSave}
               disabled={isSaving}
-              className=h-8 gap-1 text-xs
-            
-              Save className=w-3 h-3 
-              {isSaving  Sauvegarde...  Enregistrer}
-            Button
-          div
-        div
-      header
+              className="h-8 gap-1 text-xs"
+            >
+              <Save className="w-3 h-3" />
+              {isSaving ? "Sauvegarde..." : "Enregistrer"}
+            </Button>
+          </div>
+        </div>
+      </header>
 
-      div className=max-w-6xl mx-auto px-4 py-6 space-y-6
-        { Facteur de simultanéité }
-        Card
-          CardContent className=py-4
-            div className=flex flex-col smflex-row smitems-center gap-4 justify-between
-              div className=flex items-start gap-3
-                Info className=w-4 h-4 text-primary mt-0.5 shrink-0 
-                p className=text-sm text-muted-foreground
+      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        {/* Facteur de simultanéité */}
+        <Card>
+          <CardContent className="py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+              <div className="flex items-start gap-3">
+                <Info className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <p className="text-sm text-muted-foreground">
                   Facteur de simultanéité UTE C15-712-2 ×1,3
-                p
-              div
-              div className=flex items-center gap-2
-                span className=text-sm text-muted-foreground
-                  {applySimultaneity  ×1,3 appliqué  ×1,0}
-                span
-                Switch
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  {applySimultaneity ? "×1,3 appliqué" : "×1,0"}
+                </span>
+                <Switch
                   checked={applySimultaneity}
                   onCheckedChange={setApplySimultaneity}
-                
-              div
-            div
-          CardContent
-        Card
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        Tabs value={activeTab} onValueChange={setActiveTab}
-          TabsList
-            {SITES.map((sid) = {
-              const hasLoad = siteParams[sid].energyLoad  0;
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            {SITES.map((sid) => {
+              const hasLoad = siteParams[sid].energyLoad > 0;
               return (
-                TabsTrigger key={sid} value={sid} className=flex items-center gap-1.5
+                <TabsTrigger key={sid} value={sid} className="flex items-center gap-1.5">
                   {sid}
-                  {hasLoad && span className=w-1.5 h-1.5 rounded-full bg-primary }
-                TabsTrigger
+                  {hasLoad && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                </TabsTrigger>
               );
             })}
-          TabsList
+          </TabsList>
 
-          {SITES.map((sid) = (
-            TabsContent key={sid} value={sid} className=mt-4 space-y-4
-              motion.div
-                initial={{ opacity 0, y 8 }}
-                animate={{ opacity 1, y 0 }}
-                transition={{ duration 0.3 }}
-                className=space-y-4
-              
-                Card
-                  CardHeader className=pb-4
-                    CardTitle className=text-base flex items-center gap-2
-                      div className=w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0
-                        span className=text-white text-[10px] font-bold{sid}span
-                      div
-                      div
-                        div className=font-semibold{sid}div
-                        div className=text-xs font-normal text-muted-foreground
+          {SITES.map((sid) => (
+            <TabsContent key={sid} value={sid} className="mt-4 space-y-4">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-4"
+              >
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
+                        <span className="text-white text-[10px] font-bold">{sid}</span>
+                      </div>
+                      <div>
+                        <div className="font-semibold">{sid}</div>
+                        <div className="text-xs font-normal text-muted-foreground">
                           {getSiteFullName(sid)}
-                        div
-                      div
-                    CardTitle
-                  CardHeader
-                  CardContent className=space-y-4
-                    EnergyLoadInput
+                        </div>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <EnergyLoadInput
                       siteId={sid}
                       totalWh={siteParams[sid].energyLoad}
-                      onTotalChange={(wh) = handleEnergyChange(sid, wh)}
-                    
-                    SiteParamsForm
+                      onTotalChange={(wh) => handleEnergyChange(sid, wh)}
+                    />
+                    <SiteParamsForm
                       params={siteParams[sid]}
-                      onChange={(updated) = handleParamsChange(sid, updated)}
-                    
-                  CardContent
-                Card
+                      onChange={(updated) => handleParamsChange(sid, updated)}
+                    />
+                  </CardContent>
+                </Card>
 
-                {siteParams[sid].energyLoad  0  (
-                  SiteResultCard
+                {siteParams[sid].energyLoad > 0 ? (
+                  <SiteResultCard
                     result={calculateSite(siteParams[sid], applySimultaneity)}
-                  
-                )  (
-                  Card className=border-dashed border-border
-                    CardContent className=py-10 flex flex-col items-center text-center gap-2
-                      AlertCircle className=w-8 h-8 text-muted-foreground40 
-                      p className=text-sm text-muted-foreground
+                  />
+                ) : (
+                  <Card className="border-dashed border-border">
+                    <CardContent className="py-10 flex flex-col items-center text-center gap-2">
+                      <AlertCircle className="w-8 h-8 text-muted-foreground/40" />
+                      <p className="text-sm text-muted-foreground">
                         Saisir la charge énergétique journalière ci-dessus pour calculer le dimensionnement
-                      p
-                    CardContent
-                  Card
+                      </p>
+                    </CardContent>
+                  </Card>
                 )}
-              motion.div
-            TabsContent
+              </motion.div>
+            </TabsContent>
           ))}
-        Tabs
+        </Tabs>
 
-        {results.length  0 && EnergyCharts results={results} }
+        {results.length > 0 && <EnergyCharts results={results} />}
 
-        {results.length  1 && (
-          Card
-            CardHeader
-              CardTitle className=text-baseRécapitulatif de Tous les SitesCardTitle
-            CardHeader
-            CardContent className=p-0 overflow-x-auto
-              table className=w-full text-sm
-                thead
-                  tr className=border-b border-border bg-muted30
-                    th className=text-left px-4 py-3 font-semibold text-muted-foregroundSiteth
-                    th className=text-right px-4 py-3 font-semibold text-muted-foregroundE (Whj)th
-                    th className=text-right px-4 py-3 font-semibold text-muted-foregroundPuissance PVth
-                    th className=text-right px-4 py-3 font-semibold text-muted-foregroundModulesth
-                    th className=text-right px-4 py-3 font-semibold text-muted-foregroundConfig. PVth
-                    th className=text-right px-4 py-3 font-semibold text-muted-foregroundCap. Batterieth
-                    th className=text-right px-4 py-3 font-semibold text-muted-foregroundConfig. Batt.th
-                  tr
-                thead
-                tbody
-                  {results.map((r, i) = (
-                    tr key={r.siteId} className={`border-b border-border ${i % 2 === 0    bg-muted10}`}
-                      td className=px-4 py-3 font-semibold text-primary{r.siteId}td
-                      td className=px-4 py-3 text-right text-muted-foreground{r.correctedEnergyLoad.toFixed(0)}td
-                      td className=px-4 py-3 text-right font-medium{(r.pv.actualPvPower  1000).toFixed(2)} kWptd
-                      td className=px-4 py-3 text-right{r.pv.totalModules}td
-                      td className=px-4 py-3 text-right font-mono text-xs{r.pv.configLabel}td
-                      td className=px-4 py-3 text-right font-medium{r.battery.actualCapacityAh.toFixed(0)} Ahtd
-                      td className=px-4 py-3 text-right font-mono text-xs{r.battery.configLabel}td
-                    tr
+        {results.length > 1 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Récapitulatif de Tous les Sites</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Site</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground">E (Wh/j)</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground">Puissance PV</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground">Modules</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground">Config. PV</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground">Cap. Batterie</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground">Config. Batt.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.map((r, i) => (
+                    <tr key={r.siteId} className={`border-b border-border ${i % 2 === 0 ? "bg-muted/10" : ""}`}>
+                      <td className="px-4 py-3 font-semibold text-primary">{r.siteId}</td>
+                      <td className="px-4 py-3 text-right text-muted-foreground">{r.correctedEnergyLoad.toFixed(0)}</td>
+                      <td className="px-4 py-3 text-right font-medium">{(r.pv.actualPvPower / 1000).toFixed(2)} kWp</td>
+                      <td className="px-4 py-3 text-right">{r.pv.totalModules}</td>
+                      <td className="px-4 py-3 text-right font-mono text-xs">{r.pv.configLabel}</td>
+                      <td className="px-4 py-3 text-right font-medium">{r.battery.actualCapacityAh.toFixed(0)} Ah</td>
+                      <td className="px-4 py-3 text-right font-mono text-xs">{r.battery.configLabel}</td>
+                    </tr>
                   ))}
-                tbody
-              table
-            CardContent
-          Card
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
         )}
 
         {project.notes && (
-          Card
-            CardHeader
-              CardTitle className=text-sm text-muted-foregroundNotes d'IngénierieCardTitle
-            CardHeader
-            CardContent
-              p className=text-sm text-foreground whitespace-pre-wrap{project.notes}p
-            CardContent
-          Card
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm text-muted-foreground">Notes d'Ingénierie</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{project.notes}</p>
+            </CardContent>
+          </Card>
         )}
-      div
-    div
+      </div>
+    </div>
   );
 }
