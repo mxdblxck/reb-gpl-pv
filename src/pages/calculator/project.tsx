@@ -45,7 +45,7 @@ export default function ProjectPage() {
       const map: Record<string, SiteParams> = Object.fromEntries(
         SITES.map((sid) => [sid, getDefaultSiteParams(sid)])
       );
-      project.sites.forEach((s: any) => {
+      project.sites.forEach((s: SiteParams) => {
         map[s.siteId] = s;
       });
       setSiteParams(map);
