@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api.js";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { ArrowLeft } from "lucide-react";
-import { useMutation } from "convex/react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
@@ -26,6 +25,8 @@ export default function ProjectPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
+  // For new project (no ID), use default params
+  // For existing project (has ID), fetch from database
   const project = useQuery(
     api.projects.getProject,
     id ? { projectId: id as Id<"projects"> } : "skip"
@@ -43,6 +44,7 @@ export default function ProjectPage() {
 
   // Charger les données du projet une seule fois
   useEffect(() => {
+    // If we have a project, load its data
     if (project && !initialized) {
       const map: Record<string, SiteParams> = Object.fromEntries(
         SITES.map((sid) => [sid, getDefaultSiteParams(sid)])
@@ -53,7 +55,11 @@ export default function ProjectPage() {
       setSiteParams(map);
       setInitialized(true);
     }
-  }, [project, initialized]);
+    // If no project (new project), just mark as initialized
+    else if (!id && !initialized) {
+      setInitialized(true);
+    }
+  }, [project, initialized, id]);
 
   const results: SiteResult[] = SITES.map((sid) =>
     calculateSite(siteParams[sid], applySimultaneity)
@@ -70,15 +76,28 @@ export default function ProjectPage() {
     setSiteParams((prev) => ({ ...prev, [siteId]: updated }));
   };
 
+  const createProject = useMutation(api.projects.createProject);
+  
   const handleSave = async () => {
-    if (!id) return;
     setIsSaving(true);
     try {
-      await updateProject({
-        projectId: id as Id<"projects">,
-        sites: SITES.map((sid) => siteParams[sid]),
-      });
-      toast.success("Projet mis à jour.");
+      if (id) {
+        // Update existing project
+        await updateProject({
+          projectId: id as Id<"projects">,
+          sites: SITES.map((sid) => siteParams[sid]),
+        });
+        toast.success("Projet mis à jour.");
+      } else {
+        // Create new project
+        const result = await createProject({
+          name: "Nouveau Projet",
+          sites: SITES.map((sid) => siteParams[sid]),
+        });
+        toast.success("Projet créé!Vous pouvez maintenant le sauvegarder.");
+        // Navigate to the new project
+        navigate("/calculator/project/" + result);
+      }
     } catch (err) {
       if (err instanceof ConvexError) {
         const data = err.data as { message: string };
@@ -104,7 +123,8 @@ export default function ProjectPage() {
     }
   };
 
-  if (project === undefined) {
+  // Loading state - show skeleton while fetching project
+  if (id && project === undefined) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-4">
         <Skeleton className="h-14 w-full" />
@@ -113,7 +133,8 @@ export default function ProjectPage() {
     );
   }
 
-  if (project === null) {
+  // Project not found (only when we have an ID)
+  if (id && project === null) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <p className="text-muted-foreground">Projet introuvable ou accès refusé.</p>
@@ -143,10 +164,10 @@ export default function ProjectPage() {
                   <Sun className="w-3 h-3 text-white" />
                 </div>
                 <span className="font-semibold text-sm text-foreground">
-                  {project.name}
+                  {project ? project.name : "Nouveau Projet"}
                 </span>
               </div>
-              {project.description && (
+              {project?.description && (
                 <p className="text-[10px] text-muted-foreground">
                   {project.description}
                 </p>
@@ -304,7 +325,7 @@ export default function ProjectPage() {
           </Card>
         )}
 
-        {project.notes && (
+        {project?.notes && (
           <Card>
             <CardHeader>
               <CardTitle className="text-sm text-muted-foreground">Notes d'Ingénierie</CardTitle>
