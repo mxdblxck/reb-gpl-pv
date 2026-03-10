@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api.js";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { ArrowLeft } from "lucide-react";
@@ -18,21 +16,43 @@ import EnergyLoadInput from "@/pages/calculator/_components/EnergyLoadInput.tsx"
 import type { SiteParams, SiteResult } from "@/lib/solar-calc.ts";
 import { SITES, getDefaultSiteParams, calculateSite, getSiteFullName } from "@/lib/solar-calc.ts";
 import { generateSizingPDF } from "@/lib/pdf-export.ts";
-import { ConvexError } from "convex/values";
-import type { Id } from "@/convex/_generated/dataModel.d.ts";
+
+// Local storage types
+interface LocalProject {
+  id: string;
+  name: string;
+  description?: string;
+  notes?: string;
+  sites: SiteParams[];
+  updatedAt: string;
+}
+
+function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+function loadProjects(): LocalProject[] {
+  try {
+    const stored = localStorage.getItem("solar_projects");
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveProjects(projects: LocalProject[]): void {
+  localStorage.setItem("solar_projects", JSON.stringify(projects));
+}
 
 export default function ProjectPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  // For new project (no ID), use default params
-  // For existing project (has ID), fetch from database
-  const project = useQuery(
-    api.projects.getProject,
-    id ? { projectId: id as Id<"projects"> } : "skip"
-  );
+  // Use local storage instead of Convex
+  const [projects, setProjects] = useState<LocalProject[]>(() => loadProjects());
   
-  const updateProject = useMutation(api.projects.updateProject);
+  // Find current project by ID
+  const project = id ? projects.find(p => p.id === id) : null;
   
   const [activeTab, setActiveTab] = useState("BVS1");
   const [applySimultaneity, setApplySimultaneity] = useState(false);
@@ -76,35 +96,38 @@ export default function ProjectPage() {
     setSiteParams((prev) => ({ ...prev, [siteId]: updated }));
   };
 
-  const createProject = useMutation(api.projects.createProject);
-  
-  const handleSave = async () => {
+  const handleSave = () => {
     setIsSaving(true);
     try {
+      const siteData = SITES.map((sid) => siteParams[sid]);
+      
       if (id) {
         // Update existing project
-        await updateProject({
-          projectId: id as Id<"projects">,
-          sites: SITES.map((sid) => siteParams[sid]),
-        });
+        const updatedProjects = projects.map(p => 
+          p.id === id 
+            ? { ...p, sites: siteData, updatedAt: new Date().toISOString() }
+            : p
+        );
+        setProjects(updatedProjects);
+        saveProjects(updatedProjects);
         toast.success("Projet mis à jour.");
       } else {
         // Create new project
-        const result = await createProject({
+        const newProject: LocalProject = {
+          id: generateId(),
           name: "Nouveau Projet",
-          sites: SITES.map((sid) => siteParams[sid]),
-        });
-        toast.success("Projet créé!Vous pouvez maintenant le sauvegarder.");
+          sites: siteData,
+          updatedAt: new Date().toISOString(),
+        };
+        const updatedProjects = [...projects, newProject];
+        setProjects(updatedProjects);
+        saveProjects(updatedProjects);
+        toast.success("Projet créé!");
         // Navigate to the new project
-        navigate("/calculator/project/" + result);
+        navigate("/calculator/project/" + newProject.id);
       }
-    } catch (err) {
-      if (err instanceof ConvexError) {
-        const data = err.data as { message: string };
-        toast.error(data.message);
-      } else {
-        toast.error("Échec de la sauvegarde des modifications.");
-      }
+    } catch {
+      toast.error("Échec de la sauvegarde.");
     } finally {
       setIsSaving(false);
     }
@@ -123,23 +146,13 @@ export default function ProjectPage() {
     }
   };
 
-  // Loading state - show skeleton while fetching project
-  if (id && project === undefined) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-4">
-        <Skeleton className="h-14 w-full" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
-
-  // Project not found (only when we have an ID)
-  if (id && project === null) {
+  // Project not found (only when we have an ID but not in local storage)
+  if (id && !project) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-muted-foreground">Projet introuvable ou accès refusé.</p>
-        <Button onClick={() => navigate("/dashboard")} className="gap-1.5">
-          <ArrowLeft className="w-4 h-4" /> Retour au Tableau de Bord
+        <p className="text-muted-foreground">Projet introuvable.</p>
+        <Button onClick={() => navigate("/calculator")} className="gap-1.5">
+          <ArrowLeft className="w-4 h-4" /> Nouveau Projet
         </Button>
       </div>
     );
