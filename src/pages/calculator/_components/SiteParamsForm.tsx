@@ -197,18 +197,51 @@ export default function SiteParamsForm({ params, onChange }: Props) {
                     <span className="text-primary/70">({f.unit})</span>
                   )}
                 </Label>
-                <Input
-                  type="number"
-                  step={f.step}
-                  // Remove spinner buttons with CSS, allow decimal points
-                  style={{ WebkitAppearance: "textfield", MozAppearance: "textfield" }}
-                  // For margin, display as percentage (value * 100), but store as decimal
-                  value={getInputValue(f.key, params[f.key] as number)}
-                  onChange={(e) => handleChange(f.key, e.target.value)}
-                  onBlur={() => handleBlur(f.key)}
-                  className="h-8 text-sm no-spinner"
-                  title={f.tooltip}
-                />
+                <div className="flex gap-1">
+                  <Input
+                    type="number"
+                    step={f.step}
+                    // Remove spinner buttons with CSS, allow decimal points
+                    style={{ WebkitAppearance: "textfield", MozAppearance: "textfield" }}
+                    // For margin, display as percentage (value * 100), but store as decimal
+                    value={getInputValue(f.key, params[f.key] as number)}
+                    onChange={(e) => handleChange(f.key, e.target.value)}
+                    onBlur={() => handleBlur(f.key)}
+                    className="h-8 text-sm no-spinner flex-1"
+                    title={f.tooltip}
+                  />
+                  {/* Preset buttons for PSH */}
+                  {f.key === "psh" && (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs px-2 text-muted-foreground hover:text-primary"
+                        onClick={() => {
+                          handleChange("psh", "4.95");
+                          onChange({ ...params, psh: 4.95 });
+                        }}
+                        title="PSH pire mois"
+                      >
+                        4.95
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs px-2 text-muted-foreground hover:text-primary"
+                        onClick={() => {
+                          handleChange("psh", "5.2");
+                          onChange({ ...params, psh: 5.2 });
+                        }}
+                        title="PSH moyen"
+                      >
+                        5.2
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             ))}
           </div>

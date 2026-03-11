@@ -127,8 +127,9 @@ export default function EnergyLoadInput({
     if (!isNaN(num) && num >= 0 && num <= 100) {
       if (onMarginChange) {
         onMarginChange(num);
-        // Don't add margin here - it's already applied in solar-calc.ts
-        onTotalChange(detailedTotal);
+        // Add margin to total directly
+        const totalWithMargin = detailedTotal * (1 + num / 100);
+        onTotalChange(totalWithMargin);
       }
     }
   };
@@ -140,7 +141,9 @@ export default function EnergyLoadInput({
     setMarginInputValue(newValue.toString());
     if (onMarginChange) {
       onMarginChange(newValue);
-      onTotalChange(detailedTotal);
+      // Add margin to total directly
+      const totalWithMargin = detailedTotal * (1 + newValue / 100);
+      onTotalChange(totalWithMargin);
     }
   };
 

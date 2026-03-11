@@ -191,7 +191,7 @@ export default function Index() {
           </motion.div>
         </div>
 
-        {/* Ligne de statistiques */}
+        {/* Ligne de statistiques - Clickable Cards */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -199,22 +199,47 @@ export default function Index() {
           className="relative max-w-3xl mx-auto mt-10 sm:mt-16 grid grid-cols-3 gap-3 sm:gap-4">
           
           {[
-          { label: "Heures de Soleil Crête", value: "4.95 h", sub: "Pire mois" },
-          { label: "Puissance Module", value: "555 Wp", sub: "Jinko Solar" },
-          { label: "Autonomie", value: "5 Jours", sub: "Ni-Cad DOD 0.8" }].
+            { 
+              label: "Puissance Module", 
+              value: "555 Wp", 
+              sub: "Jinko Solar", 
+              href: "/datasheets/JKM555-575N-72HL4-(V)-F1-EN.pdf",
+              desc: "Module photovoltaïque monocristallin"
+            },
+            { 
+              label: "Autonomie", 
+              value: "5 Jours", 
+              sub: "Ni-Cad Batteries", 
+              href: "/datasheets/HSL-Ni-Cd-Battery-Leaflet.pdf",
+              desc: "Batteries Nickel-Cadmium HBL"
+            },
+            { 
+              label: "MPPT", 
+              value: "60A/100A", 
+              sub: "Genstar", 
+              href: "/datasheets/datasheet-genstar-mppt-en.pdf",
+              desc: "Régulateur de charge MPPT"
+            },
+          ].
           map((stat, i) =>
-          <div
+          <a
             key={i}
-            className="bg-card border border-border rounded-xl p-4 sm:p-5 text-center shadow-sm">
+            href={stat.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-card border border-border rounded-xl p-3 sm:p-4 text-center shadow-sm hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group">
             
-              <div className="text-xl sm:text-2xl font-bold text-primary">{stat.value}</div>
+              <div className="text-lg sm:text-xl font-bold text-primary group-hover:text-primary/80 transition-colors">{stat.value}</div>
               <div className="text-xs sm:text-sm font-medium text-foreground mt-1">
                 {stat.label}
               </div>
               <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
                 {stat.sub}
               </div>
-            </div>
+              <div className="text-[9px] sm:text-[10px] text-primary/70 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                📄 Fiche technique
+              </div>
+          </a>
           )}
         </motion.div>
       </section>
