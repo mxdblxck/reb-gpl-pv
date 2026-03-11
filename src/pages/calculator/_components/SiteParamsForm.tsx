@@ -167,7 +167,7 @@ export default function SiteParamsForm({ params, onChange }: Props) {
         >
           <span className="font-semibold flex items-center gap-2">
             <Settings className="w-4 h-4" />
-            ⚙️ Paramètres Avancés du Système
+            Paramètres Avancés du Système
           </span>
           {isOpen ? (
             <ChevronUp className="w-4 h-4" />

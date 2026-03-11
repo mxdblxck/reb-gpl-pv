@@ -295,9 +295,9 @@ export default function Index() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8 sm:mb-14">
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2 sm:mb-3">
-              Fonctionnalités de Niveau Ingénierie
+              Fonctionnalités du Calculateur
             </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">Conçu spécifiquement pour le systèmes PV off-grid pour les ouvrages de SH-REB-GPL
+            <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">Un outil complet pour le dimensionnement des systèmes PV off-grid pour les ouvrages Sonatrach REB-GPL
 
             </p>
           </div>
@@ -383,7 +383,7 @@ export default function Index() {
             </span>
           </div>
           <p className="text-[10px] sm:text-xs text-muted-foreground text-center sm:text-left">
-            © {new Date().getFullYear()} Sonatrach DC-EPM. Conforme UTE C15-712-2.<br/>
+            © {new Date().getFullYear()} Sonatrach DC-EPM.<br/>
             by <a href="https://www.linkedin.com/in/med-adda" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">Mohamed ADDA</a>
           </p>
         </div>
