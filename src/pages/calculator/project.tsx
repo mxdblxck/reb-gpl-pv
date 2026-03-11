@@ -66,9 +66,13 @@ export default function ProjectPage() {
   };
 
   const handleMarginChange = (siteId: string, percent: number) => {
+    // Get current energyLoad and calculate new total with margin
+    const currentParams = siteParams[siteId];
+    const baseEnergy = currentParams.energyLoad / (1 + (currentParams.margin || 0));
+    
     setSiteParams((prev) => ({
       ...prev,
-      [siteId]: { ...prev[siteId], margin: percent / 100 },
+      [siteId]: { ...prev[siteId], margin: percent / 100, energyLoad: baseEnergy * (1 + percent / 100) },
     }));
   };
 

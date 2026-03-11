@@ -210,9 +210,22 @@ export default function SiteParamsForm({ params, onChange }: Props) {
                     className="h-8 text-sm no-spinner flex-1"
                     title={f.tooltip}
                   />
-                  {/* Preset buttons for PSH */}
+                  {/* Preset buttons for PSH - 5.2 is default (moyen), 4.95 is worst case (pire mois) */}
                   {f.key === "psh" && (
                     <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs px-2 text-muted-foreground hover:text-primary"
+                        onClick={() => {
+                          handleChange("psh", "5.2");
+                          onChange({ ...params, psh: 5.2 });
+                        }}
+                        title="PSH moyen (défaut)"
+                      >
+                        5.2
+                      </Button>
                       <Button
                         type="button"
                         variant="outline"
@@ -225,19 +238,6 @@ export default function SiteParamsForm({ params, onChange }: Props) {
                         title="PSH pire mois"
                       >
                         4.95
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-xs px-2 text-muted-foreground hover:text-primary"
-                        onClick={() => {
-                          handleChange("psh", "5.2");
-                          onChange({ ...params, psh: 5.2 });
-                        }}
-                        title="PSH moyen"
-                      >
-                        5.2
                       </Button>
                     </>
                   )}

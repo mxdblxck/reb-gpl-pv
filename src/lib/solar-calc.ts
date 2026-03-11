@@ -168,7 +168,7 @@ export function getDefaultSiteParams(siteId: string): SiteParams {
   return {
     siteId,
     energyLoad: 0,
-    psh: 4.95,
+    psh: 5.2,
     pr: 0.72,
     modulePower: 555,
     groups,

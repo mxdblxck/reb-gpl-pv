@@ -193,7 +193,7 @@ export default function DashboardPage() {
                 <Sun className="w-4 h-4 text-white" />
               </div>
               <span className="font-semibold text-sm text-foreground">
-                Mes Projets
+                Mes Essais
               </span>
             </div>
           </div>
@@ -273,7 +273,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">
-                  Aucun projet pour l'instant
+                  Aucun essai pour l'instant
                 </h3>
                 <p className="text-sm text-muted-foreground max-w-xs">
                   Démarrez un nouveau calcul de dimensionnement et sauvegardez-le dans votre bibliothèque de projets

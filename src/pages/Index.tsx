@@ -118,7 +118,7 @@ export default function Index() {
               className="hidden sm:flex text-muted-foreground hover:text-foreground"
             >
               <FolderOpen className="w-4 h-4 mr-1.5" />
-              Projets
+              Essais
             </Button>
             <Button onClick={() => navigate("/calculator")} size="sm">
               <Calculator className="w-4 h-4 mr-1.5 sm:mr-2" />
@@ -208,15 +208,15 @@ export default function Index() {
             },
             { 
               label: "Autonomie", 
-              value: "5 Jours", 
-              sub: "Ni-Cad Batteries", 
+              value: "1275Ah/1515Ah", 
+              sub: "HBL Ni-Cad Batteries", 
               href: "/datasheets/HSL-Ni-Cd-Battery-Leaflet.pdf",
               desc: "Batteries Nickel-Cadmium HBL"
             },
             { 
-              label: "MPPT", 
-              value: "60A/100A", 
-              sub: "Genstar", 
+              label: "MPPT Regulator", 
+              value: "80A/100A", 
+              sub: "Morningstar® Genstar", 
               href: "/datasheets/datasheet-genstar-mppt-en.pdf",
               desc: "Régulateur de charge MPPT"
             },
