@@ -133,6 +133,25 @@ export default function EnergyLoadInput({
     }
   };
 
+  // Handle margin increment/decrement by 5%
+  const handleMarginIncrement = (delta: number) => {
+    const current = parseFloat(marginInputValue) || 0;
+    const newValue = Math.max(0, Math.min(100, current + delta));
+    setMarginInputValue(newValue.toString());
+    if (onMarginChange) {
+      onMarginChange(newValue);
+      onTotalChange(detailedTotal);
+    }
+  };
+
+  // Reset margin input on blur if empty or invalid
+  const handleMarginBlur = () => {
+    const current = parseFloat(marginInputValue);
+    if (isNaN(current) || current < 0) {
+      setMarginInputValue(marginPercent.toString());
+    }
+  };
+
   // Mettre à jour un champ d'une ligne de charge
   const updateItem = (id: string, field: keyof LoadItem, value: string | number) => {
     setItems((prev) =>
@@ -407,21 +426,40 @@ export default function EnergyLoadInput({
                 {mode === "detailed" && (
                   <tr className="bg-primary/5">
                     <td colSpan={5} className="px-3 pb-2 pt-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <Label className="text-xs text-muted-foreground whitespace-nowrap">
                           Marge (%)
                         </Label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-6 w-6 p-0 text-xs"
+                          onClick={() => handleMarginIncrement(-5)}
+                        >
+                          -
+                        </Button>
                         <Input
                           type="number"
                           min={0}
                           max={100}
-                          step={1}
+                          step={5}
                           value={marginInputValue}
                           onChange={(e) => handleMarginInputChange(e.target.value)}
-                          className="h-6 w-16 text-xs text-center no-spinner"
+                          onBlur={() => handleMarginBlur()}
+                          className="h-6 w-14 text-xs text-center no-spinner"
                         />
-                        <span className="text-xs text-primary font-medium">
-                          +{marginPercent}% → {(detailedTotal * (1 + marginPercent / 100)).toFixed(0)} Wh/j
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-6 w-6 p-0 text-xs"
+                          onClick={() => handleMarginIncrement(5)}
+                        >
+                          +
+                        </Button>
+                        <span className="text-xs text-primary font-medium ml-1">
+                          → {(detailedTotal * (1 + marginPercent / 100)).toFixed(0)} Wh/j
                         </span>
                       </div>
                     </td>

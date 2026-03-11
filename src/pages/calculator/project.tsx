@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api.js";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { ArrowLeft, Sun, Save, Download, Info, AlertCircle } from "lucide-react";
+import { ArrowLeft, Sun, Save, Download, Info, AlertCircle, FileText, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
@@ -112,7 +112,7 @@ export default function ProjectPage() {
 
   if (project === undefined) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-4">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-8 space-y-4">
         <Skeleton className="h-14 w-full" />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -121,8 +121,8 @@ export default function ProjectPage() {
 
   if (project === null) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-muted-foreground">Projet introuvable ou accès refusé.</p>
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4">
+        <p className="text-muted-foreground text-center">Projet introuvable ou accès refusé.</p>
         <Button onClick={() => navigate("/dashboard")} className="gap-1.5">
           <ArrowLeft className="w-4 h-4" /> Retour au Tableau de Bord
         </Button>
@@ -134,21 +134,21 @@ export default function ProjectPage() {
     <div className="min-h-screen bg-background">
       {/* En-tête */}
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-sm border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+        <div className="max-w-6xl mx-auto px-2 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button
               size="sm"
               onClick={() => navigate("/dashboard")}
-              className="border border-border bg-transparent text-muted-foreground hover:bg-muted h-8 px-2"
+              className="border border-border bg-transparent text-muted-foreground hover:bg-muted h-8 px-2 shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />
             </Button>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <div className="w-5 h-5 bg-primary rounded flex items-center justify-center">
+                <div className="w-5 h-5 bg-primary rounded flex items-center justify-center shrink-0">
                   <Sun className="w-3 h-3 text-white" />
                 </div>
-                <span className="font-semibold text-sm text-foreground">
+                <span className="font-semibold text-sm text-foreground truncate max-w-[120px] sm:max-w-none">
                   {project.name}
                 </span>
               </div>
@@ -165,7 +165,7 @@ export default function ProjectPage() {
               onClick={handleExportPDF}
               className="h-8 gap-1 border border-border bg-transparent text-muted-foreground hover:bg-muted text-xs"
             >
-              <Download className="w-3 h-3" />
+              <FileText className="w-3 h-3" />
               <span className="hidden sm:inline">PDF</span>
             </Button>
             <Button
@@ -184,7 +184,7 @@ export default function ProjectPage() {
               }}
               className="h-8 gap-1 border border-border bg-transparent text-muted-foreground hover:bg-muted text-xs"
             >
-              <Download className="w-3 h-3" />
+              <FileSpreadsheet className="w-3 h-3" />
               <span className="hidden sm:inline">Excel</span>
             </Button>
             <Button
@@ -200,7 +200,7 @@ export default function ProjectPage() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Facteur de simultanéité */}
         <Card>
           <CardContent className="py-4">
@@ -225,11 +225,11 @@ export default function ProjectPage() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
+          <TabsList className="w-full justify-start overflow-x-auto">
             {SITES.map((sid) => {
               const hasLoad = siteParams[sid].energyLoad > 0;
               return (
-                <TabsTrigger key={sid} value={sid} className="flex items-center gap-1.5">
+                <TabsTrigger key={sid} value={sid} className="flex items-center gap-1.5 px-3">
                   {sid}
                   {hasLoad && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
                 </TabsTrigger>
@@ -300,8 +300,8 @@ export default function ProjectPage() {
             <CardHeader>
               <CardTitle className="text-base">Récapitulatif de Tous les Sites</CardTitle>
             </CardHeader>
-            <CardContent className="p-0 overflow-x-auto">
-              <table className="w-full text-sm">
+            <CardContent className="p-2 sm:p-0 overflow-x-auto">
+              <table className="w-full text-xs sm:text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
                     <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Site</th>
