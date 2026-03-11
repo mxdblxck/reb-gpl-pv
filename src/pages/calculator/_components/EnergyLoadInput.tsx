@@ -420,6 +420,11 @@ export default function EnergyLoadInput({
                     <span className="text-xs text-muted-foreground ml-1">
                       Wh/j
                     </span>
+                    {marginPercent > 0 && (
+                      <div className="text-xs text-primary/70">
+                        +{marginPercent}% → {(detailedTotal * (1 + marginPercent / 100)).toFixed(0)} Wh/j
+                      </div>
+                    )}
                   </td>
                   <td />
                 </tr>

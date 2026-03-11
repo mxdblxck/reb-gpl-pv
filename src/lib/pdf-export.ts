@@ -390,112 +390,173 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
   doc.save(fileName);
 }
 
-// Excel Export function
+// Excel Export function - Beautiful and organized
 export function generateExcel(results: SiteResult[], projectName?: string): void {
   const wb = XLSX.utils.book_new();
   
-  // Feuille 1: Récapitulatif
-  const summaryData = [
-    ["SONATRACH - REB GPL Ligne"],
-    ["Projet: " + (projectName || "Dimensionnement PV")],
-    ["Date: " + new Date().toLocaleDateString('fr-FR')],
-    [""],
-    ["PARAMÈTRES"],
-    ["Emplacement", "Rhourde El Baguel, Algérie"],
-    ["PSH (pire mois)", results[0]?.params.psh + " h/jour"],
-    ["PR", results[0]?.params.pr],
-    ["Tension système", results[0]?.params.systemVoltage + " V DC"],
-    ["Autonomie", results[0]?.params.autonomy + " jours"],
-    ["DOD", (results[0]?.params.dod * 100) + "%"],
-    [""],
-  ];
+  // Helper: Convert hex to RGB
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : [0, 0, 0];
+  };
   
-  const summaryHeader = ["Site", "Énergie (Wh/j)", "Puissance PV (Wp)", "Modules", "Config PV", "Capacité Batt (Ah)", "Config Batt"];
-  const summaryRows = results.map(r => [
-    r.siteId,
-    r.correctedEnergyLoad.toFixed(0),
-    r.pv.actualPvPower,
-    r.pv.totalModules,
-    r.pv.configLabel,
-    r.battery.actualCapacityAh,
-    r.battery.configLabel,
-  ]);
+  const ORANGE = hexToRgb('#FF6600');
+  const DARK = hexToRgb('#1E1414');
+  const GRAY = hexToRgb('#F5F5F5');
   
-  summaryData.push(summaryHeader);
-  summaryRows.forEach(row => summaryData.push(row));
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FEUILLE 1: RÉSUMÉ DU PROJET
+  // ═══════════════════════════════════════════════════════════════════════════
+  const summaryData: (string | number)[][] = [];
   
-  const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-  XLSX.utils.book_append_sheet(wb, wsSummary, "Récapitulatif");
+  // En-tête projet
+  summaryData.push(
+    ["SONATRACH - REB GPL LIGNE", "", "", "", "", "", ""],
+    ["Projet: " + (projectName || "Dimensionnement PV"), "", "", "", "", "", ""],
+    ["Date: " + new Date().toLocaleDateString('fr-FR'), "", "", "", "", "", ""],
+    ["", "", "", "", "", "", ""]
+  );
   
-  // Feuille 2: Détails PV
-  const pvData = [
-    ["DÉTAIL SYSTÈME PV"],
-    [""],
-    ["Site", "Puissance Requise", "Puissance Installée", "Modules Total", "Modules/Groupe", "Groupes", "Série/String", "Strings//Groupe"],
-  ];
+  // En-têtes tableau
+  const headers = ["Site", "Énergie (Wh/j)", "Puissance PV (kWp)", "Modules", "Config PV", "Capacité Batt (Ah)", "Config Batt"];
+  summaryData.push(headers);
+  
+  // Données
   results.forEach(r => {
-    pvData.push([
+    summaryData.push([
       r.siteId,
-      String(r.pv.pvRequiredWp),
-      String(r.pv.actualPvPower),
-      String(r.pv.totalModules),
-      String(r.pv.nModulesPerGroup),
-      String(r.params.groups),
-      String(r.pv.seriesPerGroup),
-      String(r.pv.parallelStrings),
-    ]);
-  });
-  const wsPV = XLSX.utils.aoa_to_sheet(pvData);
-  XLSX.utils.book_append_sheet(wb, wsPV, "Système PV");
-  
-  // Feuille 3: Détails Batterie
-  const battData = [
-    ["DÉTAIL PARC BATTERIES"],
-    [""],
-    ["Site", "Capacité Requise (Ah)", "Capacité Installée (Ah)", "Énergie (Wh)", "Cellules Série", "Branches Parall", "Total Cellules", "Config"],
-  ];
-  results.forEach(r => {
-    battData.push([
-      r.siteId,
-      String(r.battery.capacityAh),
-      String(r.battery.actualCapacityAh),
-      String(r.battery.actualCapacityWh),
-      String(r.battery.cellsInSeries),
-      String(r.battery.parallelBranches),
-      String(r.battery.totalCells),
+      Math.round(r.correctedEnergyLoad),
+      (r.pv.actualPvPower / 1000).toFixed(2),
+      r.pv.totalModules,
+      r.pv.configLabel,
+      Math.round(r.battery.actualCapacityAh),
       r.battery.configLabel,
     ]);
   });
-  const wsBatt = XLSX.utils.aoa_to_sheet(battData);
-  XLSX.utils.book_append_sheet(wb, wsBatt, "Batteries");
   
-  // Feuille 4: Temps de Recharge
-  const rechargeData = [
-    ["TEMPS DE RECHARGE DES BATTERIES"],
-    [""],
+  summaryData.push(["", "", "", "", "", "", ""]);
+  summaryData.push(["Paramètres utilisés", "", "", "", "", "", ""]);
+  if (results[0]) {
+    summaryData.push(["PSH (pire mois)", results[0].params.psh + " h/jour"]);
+    summaryData.push(["PR (Performance Ratio)", results[0].params.pr]);
+    summaryData.push(["Tension système", results[0].params.systemVoltage + " V DC"]);
+    summaryData.push(["Autonomie", results[0].params.autonomy + " jours"]);
+    summaryData.push(["DOD", (results[0].params.dod * 100).toFixed(0) + "%"]);
+    summaryData.push(["Marge", ((results[0].params.margin || 0) * 100).toFixed(0) + "%"]);
+  }
+  
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+  
+  // Set column widths
+  wsSummary['!cols'] = [
+    { wch: 8 },  // Site
+    { wch: 15 }, // Energie
+    { wch: 15 }, // Puissance PV
+    { wch: 8 },  // Modules
+    { wch: 12 }, // Config PV
+    { wch: 15 }, // Capacité Batt
+    { wch: 12 }, // Config Batt
   ];
   
+  // Merge cells for header
+  wsSummary['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // SONATRACH title
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // Project name
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } }, // Date
+  ];
+  
+  XLSX.utils.book_append_sheet(wb, wsSummary, "Résumé");
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FEUILLE 2: DÉTAIL SYSTÈME PV
+  // ═══════════════════════════════════════════════════════════════════════════
+  const pvData: (string | number)[][] = [];
+  pvData.push(["DÉTAIL SYSTÈME PHOTOVOLTAÏQUE", "", "", "", "", "", "", ""]);
+  pvData.push(["", "", "", "", "", "", "", ""]);
+  pvData.push(["Site", "Puissance Requise (Wp)", "Puissance Installée (Wp)", "Modules Total", "Modules/Groupe", "Groupes", "Série/String", "Strings//Groupe"]);
+  
   results.forEach(r => {
-    rechargeData.push(["Site: " + r.siteId]);
+    pvData.push([
+      r.siteId,
+      Math.round(r.pv.pvRequiredWp),
+      Math.round(r.pv.actualPvPower),
+      r.pv.totalModules,
+      r.pv.nModulesPerGroup,
+      r.params.groups,
+      r.pv.seriesPerGroup,
+      r.pv.parallelStrings,
+    ]);
+  });
+  
+  const wsPV = XLSX.utils.aoa_to_sheet(pvData);
+  wsPV['!cols'] = [
+    { wch: 8 }, { wch: 18 }, { wch: 18 }, { wch: 12 },
+    { wch: 14 }, { wch: 8 }, { wch: 12 }, { wch: 14 },
+  ];
+  wsPV['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
+  XLSX.utils.book_append_sheet(wb, wsPV, "Système PV");
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FEUILLE 3: DÉTAIL BATTERIES
+  // ═══════════════════════════════════════════════════════════════════════════
+  const battData: (string | number)[][] = [];
+  battData.push(["DÉTAIL PARC BATTERIES", "", "", "", "", "", "", ""]);
+  battData.push(["", "", "", "", "", "", "", ""]);
+  battData.push(["Site", "Capacité Requise (Ah)", "Capacité Installée (Ah)", "Énergie (Wh)", "Cellules Série", "Branches Parall", "Total Cellules", "Configuration"]);
+  
+  results.forEach(r => {
+    battData.push([
+      r.siteId,
+      Math.round(r.battery.capacityAh),
+      Math.round(r.battery.actualCapacityAh),
+      Math.round(r.battery.actualCapacityWh),
+      r.battery.cellsInSeries,
+      r.battery.parallelBranches,
+      r.battery.totalCells,
+      r.battery.configLabel,
+    ]);
+  });
+  
+  const wsBatt = XLSX.utils.aoa_to_sheet(battData);
+  wsBatt['!cols'] = [
+    { wch: 8 }, { wch: 18 }, { wch: 18 }, { wch: 14 },
+    { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 14 },
+  ];
+  wsBatt['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
+  XLSX.utils.book_append_sheet(wb, wsBatt, "Batteries");
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FEUILLE 4: TEMPS DE RECHARGE
+  // ═══════════════════════════════════════════════════════════════════════════
+  const rechargeData: (string | number)[][] = [];
+  rechargeData.push(["TEMPS DE RECHARGE DES BATTERIES", "", "", "", ""]);
+  rechargeData.push(["", "", "", "", ""]);
+  
+  results.forEach(r => {
+    rechargeData.push(["Site: " + r.siteId, "", "", "", ""]);
     rechargeData.push(["PSH (h/j)", "E_pv_net (Wh/j)", "E_charge (Wh)", "Surplus (Wh/j)", "T_recharge (jours)"]);
     
     const recharge = calculateRecharge(r);
     recharge.scenarios.forEach(s => {
       rechargeData.push([
-        String(s.sunHours),
-        s.ePvJ.toFixed(0),
-        s.eLoadDuringPSH.toFixed(0),
-        s.eRechargeJ > 0 ? "+" + s.eRechargeJ.toFixed(0) : s.eRechargeJ.toFixed(0),
+        s.sunHours,
+        Math.round(s.ePvJ),
+        Math.round(s.eLoadDuringPSH),
+        s.eRechargeJ > 0 ? "+" + Math.round(s.eRechargeJ) : Math.round(s.eRechargeJ),
         s.daysToRecharge !== null ? s.daysToRecharge.toFixed(2) : "N/A",
       ]);
     });
-    rechargeData.push([""]);
+    rechargeData.push(["", "", "", "", ""]);
   });
   
   const wsRecharge = XLSX.utils.aoa_to_sheet(rechargeData);
+  wsRecharge['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 18 }];
+  wsRecharge['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }];
   XLSX.utils.book_append_sheet(wb, wsRecharge, "Temps Recharge");
   
-  // Sauvegarder
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SAUVEGARDE
+  // ═══════════════════════════════════════════════════════════════════════════
   const fileName = projectName 
     ? `REB-GPL-PV-${projectName.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().slice(0, 10)}.xlsx`
     : `REB-GPL-PV-Dimensionnement-${new Date().toISOString().slice(0, 10)}.xlsx`;
