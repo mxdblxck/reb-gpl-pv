@@ -309,23 +309,23 @@ export default function EnergyLoadInput({
           )}
 
           {/* Tableau */}
-          <div className="rounded-lg border border-border overflow-x-auto shadow-sm -mx-4 px-4 sm:mx-0 sm:px-0">
-            <table className="w-full text-sm min-w-[500px]">
+          <div className="rounded-lg border border-border shadow-sm -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto">
+            <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b border-border">
                 <tr>
-                  <th className="text-left px-2 py-2.5 text-xs font-semibold text-muted-foreground min-w-[140px]">
+                  <th className="text-left px-2 py-2.5 text-xs font-semibold text-muted-foreground">
                     Charge / Équipement
                   </th>
-                  <th className="text-center px-2 py-2.5 text-xs font-semibold text-muted-foreground w-20">
+                  <th className="text-center px-2 py-2.5 text-xs font-semibold text-muted-foreground">
                     Puissance (W)
                   </th>
-                  <th className="text-center px-2 py-2.5 text-xs font-semibold text-muted-foreground w-20">
+                  <th className="text-center px-2 py-2.5 text-xs font-semibold text-muted-foreground">
                     Heures/j
                   </th>
-                  <th className="text-right px-2 py-2.5 text-xs font-semibold text-primary w-24">
+                  <th className="text-right px-2 py-2.5 text-xs font-semibold text-primary">
                     Wh/j
                   </th>
-                  <th className="w-8" />
+                  <th className="w-10" />
                 </tr>
               </thead>
               <tbody>

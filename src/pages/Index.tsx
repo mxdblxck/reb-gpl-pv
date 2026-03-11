@@ -383,8 +383,8 @@ export default function Index() {
             </span>
           </div>
           <p className="text-[10px] sm:text-xs text-muted-foreground text-center sm:text-left">
-            © {new Date().getFullYear()} Sonatrach DC-EPM. Conforme UTE C15-712-2.
-            by : Mohamed ADDA
+            © {new Date().getFullYear()} Sonatrach DC-EPM. Conforme UTE C15-712-2.<br/>
+            by <a href="https://www.linkedin.com/in/med-adda" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">Mohamed ADDA</a>
           </p>
         </div>
       </footer>

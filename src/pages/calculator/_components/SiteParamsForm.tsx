@@ -7,7 +7,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx";
-import { ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
+import { ChevronDown, ChevronUp, RotateCcw, Settings } from "lucide-react";
 import type { SiteParams } from "@/lib/solar-calc.ts";
 import { getDefaultSiteParams } from "@/lib/solar-calc.ts";
 
@@ -162,35 +162,39 @@ export default function SiteParamsForm({ params, onChange }: Props) {
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <CollapsibleTrigger asChild>
         <Button
-          className="w-full justify-between border border-border bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-          size="sm"
+          className="w-full justify-between border-2 border-dashed border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary/50"
+          size="lg"
         >
-          <span className="text-xs font-medium">Paramètres Avancés</span>
+          <span className="font-semibold flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            ⚙️ Paramètres Avancés du Système
+          </span>
           {isOpen ? (
-            <ChevronUp className="w-3 h-3" />
+            <ChevronUp className="w-4 h-4" />
           ) : (
-            <ChevronDown className="w-3 h-3" />
+            <ChevronDown className="w-4 h-4" />
           )}
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="mt-3 space-y-3 p-4 bg-muted/20 rounded-lg border border-border">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Paramètres Système
+        <div className="mt-4 space-y-4 p-4 bg-gradient-to-b from-muted/30 to-muted/10 rounded-xl border-2 border-primary/20">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Settings className="w-4 h-4 text-primary" />
+              Configuration Technique
             </span>
             <Button
               size="sm"
               onClick={handleReset}
-              className="h-6 text-xs px-2 gap-1 border border-border bg-background text-muted-foreground hover:bg-muted"
+              className="h-7 text-xs px-3 gap-1.5 border border-border bg-background text-muted-foreground hover:bg-muted hover:text-destructive"
             >
               <RotateCcw className="w-3 h-3" />
               Réinitialiser
             </Button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {fields.map((f) => (
-              <div key={f.key} className="space-y-1">
+              <div key={f.key} className="space-y-1.5 p-2 bg-background/50 rounded-lg border border-border/50">
                 <Label className="text-xs text-muted-foreground flex items-center gap-1">
                   {f.label}
                   {f.unit && (
