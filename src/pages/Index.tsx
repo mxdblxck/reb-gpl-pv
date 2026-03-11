@@ -98,15 +98,15 @@ export default function Index() {
             <img
               src="/icon/REB LIGNE GPL.svg"
               alt="Sonatrach"
-              className="h-7 sm:h-8 w-auto object-contain" />
+              className="h-10 sm:h-12 w-auto object-contain" />
             
-            <div className="h-5 sm:h-6 w-px bg-border hidden sm:block" />
+            <div className="h-8 sm:h-10 w-px bg-border hidden sm:block" />
             <div className="hidden sm:block">
               <span className="font-bold text-foreground text-sm leading-tight block">
                 SolarSizer
               </span>
               <span className="text-[10px] text-muted-foreground leading-tight block">
-                REB GPL Line Project
+                L'énergie sur mesure
               </span>
             </div>
           </div>
@@ -164,7 +164,7 @@ export default function Index() {
             transition={{ duration: 0.7, delay: 0.1 }}
             className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-foreground text-balance mb-4 sm:mb-6">
             
-            Dimensionnement du système Off-Grid pour le projet <span className="text-primary">GPL REB</span>
+            Dimensionnement du système photovoltaique <span className="text-primary">Off-Grid</span> du projet
           </motion.h1>
 
           <motion.p
