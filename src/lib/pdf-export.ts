@@ -129,11 +129,11 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   const formulas = [
-    ["Puissance PV Requise (Wp)", "P_req = E / (PSH * PR)"],
+    ["Puissance PV Requise (Wp)", "P_req = E / (PSH x PR)"],
     ["Nombre de Modules", "N = ceil(P_req / P_module)"],
-    ["Capacité Batterie Requise (Ah)", "C_req = (E * Autonomie) / (DOD * η_batt * V_sys)"],
-    ["Cellules en Série", "N_cells = V_sys / V_cellule"],
-    ["Branches Parallèles", "N_branches = ceil(C_req / C_unitaire)"],
+    ["Capacite Batterie Requise (Ah)", "C_req = (E x Autonomie) / (DOD x n_batt x V_sys)"],
+    ["Cellules en Serie", "N_cells = V_sys / V_cellule"],
+    ["Branches Paralleles", "N_branches = ceil(C_req / C_unitaire)"],
   ];
   
   formulas.forEach(([formula, calc]) => {
@@ -295,12 +295,12 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
     doc.setFontSize(8);
     doc.setTextColor(...GRAY);
     doc.text(
-      `P_pv_net = P_inst * PR = ${pv.actualPvPower.toFixed(0)} * ${params.pr} = ${pPvNet.toFixed(0)} W  |  P_moyenne = E / 24 = ${pLoadAvg.toFixed(1)} W`,
+      `P_pv_net = P_inst x PR = ${pv.actualPvPower.toFixed(0)} x ${params.pr} = ${pPvNet.toFixed(0)} W    |    P_moyenne = E / 24 = ${pLoadAvg.toFixed(1)} W`,
       margin,
       y + 4
     );
     doc.text(
-      `T_recharge = Energie_autonomie / (Surplus_quotidien * η_batt)`,
+      `T_recharge = Energie_autonomie / (Surplus_quotidien x n_batt)`,
       margin,
       y + 9
     );
