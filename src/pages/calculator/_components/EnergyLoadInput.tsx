@@ -309,24 +309,21 @@ export default function EnergyLoadInput({
           )}
 
           {/* Tableau */}
-          <div className="rounded-lg border border-border overflow-x-auto shadow-sm">
-            <table className="w-full text-sm">
+          <div className="rounded-lg border border-border overflow-x-auto shadow-sm -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full text-sm min-w-[500px]">
               <thead className="bg-muted/50 border-b border-border">
                 <tr>
-                  <th className="text-left px-3 py-2.5 text-xs font-semibold text-muted-foreground min-w-[160px]">
-                    💡 Charge / Équipement
+                  <th className="text-left px-2 py-2.5 text-xs font-semibold text-muted-foreground min-w-[140px]">
+                    Charge / Équipement
                   </th>
-                  <th className="text-center px-3 py-2.5 text-xs font-semibold text-muted-foreground w-24">
-                    ⚡ Puissance (W)
+                  <th className="text-center px-2 py-2.5 text-xs font-semibold text-muted-foreground w-20">
+                    Puissance (W)
                   </th>
-                  <th className="text-center px-3 py-2.5 text-xs font-semibold text-muted-foreground w-24">
-                    ⏰ Heures/j
+                  <th className="text-center px-2 py-2.5 text-xs font-semibold text-muted-foreground w-20">
+                    Heures/j
                   </th>
-                  <th className="text-center px-3 py-2.5 text-xs font-semibold text-muted-foreground w-20">
-                    # Qté
-                  </th>
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-primary w-28">
-                    ⚖️ Wh/j
+                  <th className="text-right px-2 py-2.5 text-xs font-semibold text-primary w-24">
+                    Wh/j
                   </th>
                   <th className="w-8" />
                 </tr>
@@ -369,16 +366,6 @@ export default function EnergyLoadInput({
                           className="h-8 text-xs text-center border border-border/50 bg-background focus:bg-background focus:border-primary rounded-md no-spinner"
                         />
                       </td>
-                      <td className="px-2 py-2">
-                        <Input
-                          type="number"
-                          min={1}
-                          step={1}
-                          value={item.quantity}
-                          onChange={(e) => updateItem(item.id, "quantity", e.target.value)}
-                          className="h-8 text-xs text-center border border-border/50 bg-background focus:bg-background focus:border-primary rounded-md no-spinner"
-                        />
-                      </td>
                       <td className="px-3 py-2 text-right">
                         <span
                           className={`font-semibold text-xs px-2 py-1 rounded-md ${energy > 0 ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
@@ -405,7 +392,7 @@ export default function EnergyLoadInput({
               <tfoot>
                 <tr className="bg-primary/5 border-t-2 border-primary/20">
                   <td
-                    colSpan={4}
+                    colSpan={3}
                     className="px-3 py-3 font-semibold text-sm text-foreground"
                   >
                     <div className="flex items-center gap-2">
@@ -422,7 +409,7 @@ export default function EnergyLoadInput({
                     </span>
                     {marginPercent > 0 && (
                       <div className="text-xs text-primary/70">
-                        +{marginPercent}% → {effectiveTotal.toFixed(0)} Wh/j
+                        +{marginPercent}%
                       </div>
                     )}
                   </td>

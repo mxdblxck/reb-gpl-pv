@@ -228,7 +228,7 @@ export default function ProjectPage() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-6">
         {/* Facteur de simultanéité */}
         <Card>
           <CardContent className="py-4">
@@ -253,17 +253,17 @@ export default function ProjectPage() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
+          <TabsList className="w-full flex-wrap h-auto">
             {SITES.map((sid) => {
               const hasLoad = siteParams[sid].energyLoad > 0;
               return (
-                <TabsTrigger key={sid} value={sid} className="flex items-center gap-1.5">
+                <TabsTrigger key={sid} value={sid} className="flex-1 min-w-[70px]">
                   {sid}
-                  {hasLoad && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                  {hasLoad && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-1" />}
                 </TabsTrigger>
               );
             })}
-            <TabsTrigger value="comparison" className="flex items-center gap-1.5">
+            <TabsTrigger value="comparison" className="flex-1 min-w-[70px]">
               Comparaison
             </TabsTrigger>
           </TabsList>

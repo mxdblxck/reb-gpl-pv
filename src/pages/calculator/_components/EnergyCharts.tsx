@@ -62,22 +62,22 @@ export default function EnergyCharts({ results }: Props) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="pb-2">
         <CardTitle className="text-base">Graphiques de Bilan Énergétique</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeChart} onValueChange={setActiveChart}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="energy">Vue d'Ensemble Énergétique</TabsTrigger>
-            <TabsTrigger value="modules">Modules PV</TabsTrigger>
-            <TabsTrigger value="batteries">Cellules de Batterie</TabsTrigger>
+        <Tabs value={activeChart} onValueChange={setActiveChart} className="w-full">
+          <TabsList className="mb-3 w-full flex-wrap h-auto">
+            <TabsTrigger value="energy" className="text-xs px-2 py-1.5 flex-1 min-w-[100px]">Vue d'Ensemble</TabsTrigger>
+            <TabsTrigger value="modules" className="text-xs px-2 py-1.5 flex-1 min-w-[80px]">Modules PV</TabsTrigger>
+            <TabsTrigger value="batteries" className="text-xs px-2 py-1.5 flex-1 min-w-[100px]">Batteries</TabsTrigger>
           </TabsList>
 
           <TabsContent value="energy">
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={energyData} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={energyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.91 0.02 55)" />
-                <XAxis dataKey="site" tick={{ fontSize: 12 }} />
+                <XAxis dataKey="site" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip
                   contentStyle={{
