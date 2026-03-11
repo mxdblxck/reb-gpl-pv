@@ -107,6 +107,14 @@ export default function EnergyLoadInput({
     setMarginInputValue(marginPercent.toString());
   }, [marginPercent]);
 
+  // Sync items with external totalWh - when totalWh changes from parent (due to margin), update items
+  useEffect(() => {
+    if (totalWh > 0 && marginPercent > 0) {
+      // Parent sent us a total WITH margin - this is from margin change
+      // We don't need to do anything special here since margin is handled separately
+    }
+  }, [totalWh, marginPercent]);
+
   // Total mode détaillé (without margin)
   const detailedTotal = items.reduce((sum, it) => sum + calcEnergy(it), 0);
 
@@ -418,7 +426,7 @@ export default function EnergyLoadInput({
                   </td>
                   <td className="px-3 py-2.5 text-right">
                     <span className="font-bold text-primary text-base">
-                      {detailedTotal.toFixed(0)}
+                      {(detailedTotal * (1 + marginPercent / 100)).toFixed(0)}
                     </span>
                     <span className="text-xs text-muted-foreground ml-1">
                       Wh/j
