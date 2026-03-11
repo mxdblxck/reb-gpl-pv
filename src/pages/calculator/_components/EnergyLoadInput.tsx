@@ -269,25 +269,28 @@ export default function EnergyLoadInput({
         </div>
       ) : (
         /* ── Mode Détaillé ──────────────────────────────────────────────────── */
-        <div className="space-y-2">
+        <div className="space-y-3">
           {/* Présélections par site et boutons */}
           <div className="flex items-center gap-2 flex-wrap">
             <Button
               size="sm"
               onClick={loadSitePresets}
-              className="h-7 text-xs gap-1 bg-primary text-white hover:bg-primary/90"
+              className="h-8 text-xs gap-1.5 bg-primary text-white hover:bg-primary/90 shadow-sm"
             >
               <Plus className="w-3 h-3" />
-              Charger charges {siteId}
+              ⚡ Charger charges {siteId}
             </Button>
             <Button
               size="sm"
               onClick={() => setShowPresets((v) => !v)}
-              className="h-7 text-xs gap-1 border border-border bg-muted/30 text-muted-foreground hover:bg-muted"
+              className="h-8 text-xs gap-1.5 border border-border bg-background text-foreground hover:bg-muted hover:border-primary/50"
             >
               <Plus className="w-3 h-3" />
-              + Ajouter
+              + Ajouter équipement
             </Button>
+            <span className="text-xs text-muted-foreground ml-1 hidden sm:inline">
+              ou remplissez le tableau ci-dessous
+            </span>
           </div>
 
           {showPresets && (
@@ -306,24 +309,24 @@ export default function EnergyLoadInput({
           )}
 
           {/* Tableau */}
-          <div className="rounded-lg border border-border overflow-x-auto">
+          <div className="rounded-lg border border-border overflow-x-auto shadow-sm">
             <table className="w-full text-sm">
-              <thead className="bg-muted/30 border-b border-border">
+              <thead className="bg-muted/50 border-b border-border">
                 <tr>
-                  <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground min-w-[160px]">
-                    Charge / Équipement
+                  <th className="text-left px-3 py-2.5 text-xs font-semibold text-muted-foreground min-w-[160px]">
+                    💡 Charge / Équipement
                   </th>
-                  <th className="text-center px-3 py-2 text-xs font-semibold text-muted-foreground w-24">
-                    Puissance (W)
+                  <th className="text-center px-3 py-2.5 text-xs font-semibold text-muted-foreground w-24">
+                    ⚡ Puissance (W)
                   </th>
-                  <th className="text-center px-3 py-2 text-xs font-semibold text-muted-foreground w-24">
-                    Heures/j
+                  <th className="text-center px-3 py-2.5 text-xs font-semibold text-muted-foreground w-24">
+                    ⏰ Heures/j
                   </th>
-                  <th className="text-center px-3 py-2 text-xs font-semibold text-muted-foreground w-20">
-                    Qté
+                  <th className="text-center px-3 py-2.5 text-xs font-semibold text-muted-foreground w-20">
+                    # Qté
                   </th>
-                  <th className="text-right px-3 py-2 text-xs font-semibold text-primary w-28">
-                    Énergie (Wh/j)
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-primary w-28">
+                    ⚖️ Wh/j
                   </th>
                   <th className="w-8" />
                 </tr>
@@ -334,17 +337,17 @@ export default function EnergyLoadInput({
                   return (
                     <tr
                       key={item.id}
-                      className={`border-b border-border last:border-0 ${i % 2 === 0 ? "" : "bg-muted/10"}`}
+                      className={`border-b border-border last:border-0 hover:bg-primary/5 transition-colors ${i % 2 === 0 ? "" : "bg-muted/5"}`}
                     >
-                      <td className="px-2 py-1.5">
+                      <td className="px-2 py-2">
                         <Input
                           value={item.name}
                           onChange={(e) => updateItem(item.id, "name", e.target.value)}
-                          placeholder={`Charge ${i + 1}`}
-                          className="h-7 text-xs border-0 bg-transparent focus:bg-background focus:border focus:border-border px-1"
+                          placeholder="Cliquez pour nommer..."
+                          className="h-8 text-xs border border-border/50 bg-background focus:bg-background focus:border-primary rounded-md px-2 transition-all"
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td className="px-2 py-2">
                         <Input
                           type="number"
                           min={0}
@@ -352,10 +355,10 @@ export default function EnergyLoadInput({
                           value={item.power === 0 ? "" : item.power}
                           placeholder="0"
                           onChange={(e) => updateItem(item.id, "power", e.target.value)}
-                          className="h-7 text-xs text-center border-0 bg-transparent focus:bg-background focus:border focus:border-border no-spinner"
+                          className="h-8 text-xs text-center border border-border/50 bg-background focus:bg-background focus:border-primary rounded-md no-spinner"
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td className="px-2 py-2">
                         <Input
                           type="number"
                           min={0}
@@ -363,33 +366,35 @@ export default function EnergyLoadInput({
                           step={0.5}
                           value={item.hours}
                           onChange={(e) => updateItem(item.id, "hours", e.target.value)}
-                          className="h-7 text-xs text-center border-0 bg-transparent focus:bg-background focus:border focus:border-border no-spinner"
+                          className="h-8 text-xs text-center border border-border/50 bg-background focus:bg-background focus:border-primary rounded-md no-spinner"
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td className="px-2 py-2">
                         <Input
                           type="number"
                           min={1}
                           step={1}
                           value={item.quantity}
                           onChange={(e) => updateItem(item.id, "quantity", e.target.value)}
-                          className="h-7 text-xs text-center border-0 bg-transparent focus:bg-background focus:border focus:border-border no-spinner"
+                          className="h-8 text-xs text-center border border-border/50 bg-background focus:bg-background focus:border-primary rounded-md no-spinner"
                         />
                       </td>
-                      <td className="px-3 py-1.5 text-right">
+                      <td className="px-3 py-2 text-right">
                         <span
-                          className={`font-semibold text-xs ${energy > 0 ? "text-primary" : "text-muted-foreground"}`}
+                          className={`font-semibold text-xs px-2 py-1 rounded-md ${energy > 0 ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
                         >
                           {energy > 0 ? energy.toFixed(0) : "—"}
                         </span>
                       </td>
-                      <td className="px-1 py-1.5">
+                      <td className="px-1 py-2">
                         <Button
                           size="sm"
+                          variant="ghost"
                           onClick={() => removeItem(item.id)}
-                          className="h-6 w-6 p-0 border-0 bg-transparent text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                          title="Supprimer cette charge"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </td>
                     </tr>
@@ -401,10 +406,10 @@ export default function EnergyLoadInput({
                 <tr className="bg-primary/5 border-t-2 border-primary/20">
                   <td
                     colSpan={4}
-                    className="px-3 py-2.5 font-semibold text-sm text-foreground"
+                    className="px-3 py-3 font-semibold text-sm text-foreground"
                   >
-                    <div className="flex items-center gap-1.5">
-                      <Zap className="w-3.5 h-3.5 text-primary" />
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-primary" />
                       Charge Énergétique Journalière Totale
                     </div>
                   </td>

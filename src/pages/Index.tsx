@@ -183,11 +183,12 @@ export default function Index() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}>
             
-            <Button size="lg" onClick={() => navigate("/calculator")} className="gap-2 text-sm sm:text-base px-6 sm:px-8 h-11 sm:h-12">
+            <Button size="lg" onClick={() => navigate("/calculator")} className="gap-2 text-sm sm:text-base px-6 sm:px-8 h-11 sm:h-12 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all animate-pulse hover:animate-none">
               <Calculator className="w-5 h-5" />
               Ouvrir le Calculateur
               <ChevronRight className="w-5 h-5" />
             </Button>
+            <p className="text-xs text-muted-foreground mt-3">Entrez vos charges énergétiques pour chaque site →</p>
           </motion.div>
         </div>
 
@@ -308,15 +309,19 @@ export default function Index() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
-              className="bg-card border border-border rounded-xl p-4 sm:p-6 hover:border-primary/30 transition-colors shadow-sm">
+              className="bg-card border border-border rounded-xl p-4 sm:p-6 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all cursor-pointer group">
               
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-primary/20 transition-colors">
                   <f.icon className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="font-semibold text-foreground mb-2 text-sm sm:text-base">{f.title}</h3>
+                <h3 className="font-semibold text-foreground mb-2 text-sm sm:text-base group-hover:text-primary transition-colors">{f.title}</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                   {f.description}
                 </p>
+                <div className="flex items-center gap-1 mt-3 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span>En savoir plus</span>
+                  <ChevronRight className="w-3 h-3" />
+                </div>
               </motion.div>
             )}
           </div>
