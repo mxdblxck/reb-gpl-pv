@@ -183,7 +183,7 @@ export default function Index() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}>
             
-            <Button size="lg" onClick={() => navigate("/calculator")} className="gap-2 text-sm sm:text-base px-6 sm:px-8 h-11 sm:h-12 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all animate-pulse hover:animate-none">
+            <Button size="lg" onClick={() => navigate("/calculator")} className="gap-2 text-sm sm:text-base px-6 sm:px-8 h-11 sm:h-12 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all w-full sm:w-auto">
               <Calculator className="w-5 h-5" />
               Ouvrir le Calculateur
               <ChevronRight className="w-5 h-5" />
@@ -228,16 +228,16 @@ export default function Index() {
             href={stat.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-card border border-border rounded-xl p-3 sm:p-4 text-center shadow-sm hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group">
+            className="bg-card border border-border rounded-xl p-3 sm:p-4 text-center shadow-sm hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group block overflow-hidden">
             
-              <div className="text-lg sm:text-xl font-bold text-primary group-hover:text-primary/80 transition-colors">{stat.value}</div>
-              <div className="text-xs sm:text-sm font-medium text-foreground mt-1">
+              <div className="text-sm sm:text-xl font-bold text-primary group-hover:text-primary/80 transition-colors truncate">{stat.value}</div>
+              <div className="text-xs font-medium text-foreground mt-1 truncate">
                 {stat.label}
               </div>
-              <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+              <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 truncate">
                 {stat.sub}
               </div>
-              <div className="text-[9px] sm:text-[10px] text-primary/70 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="text-[9px] sm:text-[10px] text-primary/70 mt-1 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
                 📄 Fiche technique
               </div>
           </a>
@@ -256,7 +256,7 @@ export default function Index() {
               Dimensionnez les trois stations de la pipeline en une seule session
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {sites.map((site, i) =>
             <motion.div
               key={site.id}
@@ -264,23 +264,23 @@ export default function Index() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="bg-card border border-border rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:border-primary/30"
+              className="bg-card border border-border rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:border-primary/30"
               onClick={() => navigate("/calculator")}
             >
-                <div className="w-10 sm:w-12 h-10 sm:h-12 bg-primary rounded-xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <span className="text-white font-bold text-sm">{site.id}</span>
+                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <span className="text-white font-bold">{site.id}</span>
                 </div>
                 <h3 className="font-semibold text-foreground text-center mb-1 text-sm sm:text-base">
                   {site.label}
                 </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground text-center mb-3">
+                <p className="text-xs text-muted-foreground text-center mb-3 text-wrap">
                   {site.description}
                 </p>
                 <div className="flex justify-center gap-2 flex-wrap">
-                  <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">
+                  <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">
                     {site.battery}
                   </span>
-                  <span className="text-[10px] sm:text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full border border-border">
+                  <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full border border-border">
                     {site.groups}
                   </span>
                 </div>
@@ -301,7 +301,7 @@ export default function Index() {
 
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {features.map((f, i) =>
             <motion.div
               key={f.title}
@@ -309,19 +309,15 @@ export default function Index() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
-              className="bg-card border border-border rounded-xl p-4 sm:p-6 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all cursor-pointer group">
+              className="bg-card border border-border rounded-xl p-4 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all cursor-pointer group">
               
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-primary/20 transition-colors">
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
                   <f.icon className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="font-semibold text-foreground mb-2 text-sm sm:text-base group-hover:text-primary transition-colors">{f.title}</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                <h3 className="font-semibold text-foreground mb-2 text-sm">{f.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
                   {f.description}
                 </p>
-                <div className="flex items-center gap-1 mt-3 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span>En savoir plus</span>
-                  <ChevronRight className="w-3 h-3" />
-                </div>
               </motion.div>
             )}
           </div>
