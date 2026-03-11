@@ -164,7 +164,7 @@ export default function Index() {
             transition={{ duration: 0.7, delay: 0.1 }}
             className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-foreground text-balance mb-4 sm:mb-6">
             
-            Dimensionnement du système pour le projet <span className="text-primary">Off-Grid</span>
+            Dimensionnement du système Off-Grid pour le projet <span className="text-primary">GPL REB</span>
           </motion.h1>
 
           <motion.p
@@ -173,9 +173,7 @@ export default function Index() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 text-balance">
             
-            Dimensionnement photovoltaïque professionnel pour BVS1, BVS2 et
-            Terminal d'Arrivée sur la pipeline GPL REB. Calculs d'ingénierie
-            conformes à la norme UTE C15-712-2 avec dimensionnement de l'autonomie des batteries Ni-Cad.
+            Aide de calculs d'ingénierie de détail pour les sites BVS 01, BVS 02 et Terminal Arrivée. Conformément aux normes IEC 61215, IEC 62259, IEEE 1115 et UTE C15-712-2
           </motion.p>
 
           <motion.div
