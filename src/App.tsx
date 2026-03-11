@@ -11,7 +11,9 @@ import { useServiceWorker } from "@/hooks/use-service-worker.ts";
 // Sonatrach ribbon at bottom of all pages
 function SonatrachRibbon() {
   return (
-    <div className="w-full h-2 bg-gradient-to-r from-[#FF6600] via-[#FF8533] to-[#FF6600]"></div>
+    <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
+      <div className="w-full h-2 bg-gradient-to-r from-[#FF6600] via-[#FF8533] to-[#FF6600]"></div>
+    </div>
   );
 }
 
@@ -20,7 +22,7 @@ export default function App() {
   return (
     <DefaultProviders>
       <BrowserRouter>
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-background via-background to-[#FF6600]/5">
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/calculator" element={<CalculatorPage />} />

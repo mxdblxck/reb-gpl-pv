@@ -207,7 +207,7 @@ export default function Index() {
               desc: "Module photovoltaïque monocristallin"
             },
             { 
-              label: "Autonomie", 
+              label: "5 jours autonomie", 
               value: "1275Ah/1515Ah", 
               sub: "HBL Ni-Cad Batteries", 
               href: "/datasheets/HSL-Ni-Cd-Battery-Leaflet.pdf",

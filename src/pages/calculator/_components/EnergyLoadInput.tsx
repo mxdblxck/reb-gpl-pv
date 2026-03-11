@@ -107,24 +107,23 @@ export default function EnergyLoadInput({
     setMarginInputValue(marginPercent.toString());
   }, [marginPercent]);
 
-  // Sync items with external totalWh - when totalWh changes from parent (due to margin), update items
-  useEffect(() => {
-    if (totalWh > 0 && marginPercent > 0) {
-      // Parent sent us a total WITH margin - this is from margin change
-      // We don't need to do anything special here since margin is handled separately
-    }
-  }, [totalWh, marginPercent]);
-
-  // Total mode détaillé (without margin)
+  // Total mode détaillé (base without margin)
   const detailedTotal = items.reduce((sum, it) => sum + calcEnergy(it), 0);
+  
+  // Effective total WITH margin - this is what we use everywhere
+  const effectiveTotal = detailedTotal * (1 + marginPercent / 100);
+
+  // Report effective total to parent when it changes
+  useEffect(() => {
+    if (effectiveTotal > 0) {
+      onTotalChange(effectiveTotal);
+    }
+  }, [effectiveTotal]);
 
   // Lors du passage en mode simple depuis le mode détaillé, synchroniser le total
   const handleModeChange = (v: string) => {
     const next = v as "simple" | "detailed";
-    if (next === "simple" && mode === "detailed") {
-      // Don't add margin here - solar-calc.ts handles it
-      onTotalChange(detailedTotal);
-    }
+    // effectiveTotal useEffect will call onTotalChange automatically
     setMode(next);
   };
 
@@ -135,9 +134,7 @@ export default function EnergyLoadInput({
     if (!isNaN(num) && num >= 0 && num <= 100) {
       if (onMarginChange) {
         onMarginChange(num);
-        // Add margin to total directly
-        const totalWithMargin = detailedTotal * (1 + num / 100);
-        onTotalChange(totalWithMargin);
+        // effectiveTotal useEffect will call onTotalChange
       }
     }
   };
@@ -149,9 +146,7 @@ export default function EnergyLoadInput({
     setMarginInputValue(newValue.toString());
     if (onMarginChange) {
       onMarginChange(newValue);
-      // Add margin to total directly
-      const totalWithMargin = detailedTotal * (1 + newValue / 100);
-      onTotalChange(totalWithMargin);
+      // effectiveTotal useEffect will call onTotalChange
     }
   };
 
@@ -165,15 +160,6 @@ export default function EnergyLoadInput({
 
   // Mettre à jour un champ d'une ligne de charge
   const updateItem = (id: string, field: keyof LoadItem, value: string | number) => {
-    setItems((prev) =>
-      prev.map((it) => {
-        if (it.id !== id) return it;
-        if (field === "name") return { ...it, name: value as string };
-        const num = typeof value === "number" ? value : parseFloat(value as string);
-        return { ...it, [field]: isNaN(num) ? 0 : num };
-      })
-    );
-    // Synchroniser le total
     setItems((prev) => {
       const updated = prev.map((it) => {
         if (it.id !== id) return it;
@@ -181,8 +167,7 @@ export default function EnergyLoadInput({
         const num = typeof value === "number" ? value : parseFloat(value as string);
         return { ...it, [field]: isNaN(num) ? 0 : num };
       });
-      const total = updated.reduce((s, i) => s + calcEnergy(i), 0) * (1 + marginPercent / 100);
-      onTotalChange(total);
+      // Don't call onTotalChange here - the useEffect will handle it
       return updated;
     });
   };
@@ -192,8 +177,7 @@ export default function EnergyLoadInput({
   const removeItem = (id: string) => {
     setItems((prev) => {
       const next = prev.filter((it) => it.id !== id);
-      const total = next.reduce((s, i) => s + calcEnergy(i), 0) * (1 + marginPercent / 100);
-      onTotalChange(total);
+      // Don't call onTotalChange here - the useEffect will handle it
       return next.length === 0 ? [newItem()] : next;
     });
   };
@@ -426,14 +410,14 @@ export default function EnergyLoadInput({
                   </td>
                   <td className="px-3 py-2.5 text-right">
                     <span className="font-bold text-primary text-base">
-                      {(detailedTotal * (1 + marginPercent / 100)).toFixed(0)}
+                      {effectiveTotal.toFixed(0)}
                     </span>
                     <span className="text-xs text-muted-foreground ml-1">
                       Wh/j
                     </span>
                     {marginPercent > 0 && (
                       <div className="text-xs text-primary/70">
-                        +{marginPercent}% → {(detailedTotal * (1 + marginPercent / 100)).toFixed(0)} Wh/j
+                        +{marginPercent}% → {effectiveTotal.toFixed(0)} Wh/j
                       </div>
                     )}
                   </td>
@@ -475,7 +459,7 @@ export default function EnergyLoadInput({
                           +
                         </Button>
                         <span className="text-xs text-primary font-medium ml-1">
-                          → {(detailedTotal * (1 + marginPercent / 100)).toFixed(0)} Wh/j
+                          → {effectiveTotal.toFixed(0)} Wh/j
                         </span>
                       </div>
                     </td>
