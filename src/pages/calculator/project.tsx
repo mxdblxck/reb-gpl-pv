@@ -89,6 +89,8 @@ export default function ProjectPage() {
         sites: SITES.map((sid) => siteParams[sid]),
       });
       toast.success("Projet mis à jour.");
+      // Navigate to dashboard after save
+      navigate("/dashboard");
     } catch (err) {
       if (err instanceof ConvexError) {
         const data = err.data as { message: string };

@@ -9,7 +9,7 @@ import { motion } from "motion/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { Switch } from "@/components/ui/switch.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
-import { Sun, Save, Download, Info, AlertCircle, Shield } from "lucide-react";
+import { Sun, Save, Download, FileSpreadsheet, FileText, Info, AlertCircle, Shield } from "lucide-react";
 import SiteParamsForm from "@/pages/calculator/_components/SiteParamsForm.tsx";
 import SiteResultCard from "@/pages/calculator/_components/SiteResultCard.tsx";
 import EnergyCharts from "@/pages/calculator/_components/EnergyCharts.tsx";
@@ -124,8 +124,8 @@ export default function ProjectPage() {
         setProjects(updatedProjects);
         saveProjects(updatedProjects);
         toast.success("Projet créé!");
-        // Navigate to the new project
-        navigate("/calculator/project/" + newProject.id);
+        // Navigate to dashboard
+        navigate("/dashboard");
       }
     } catch {
       toast.error("Échec de la sauvegarde.");
@@ -194,7 +194,7 @@ export default function ProjectPage() {
               onClick={handleExportPDF}
               className="h-8 gap-1 border border-border bg-transparent text-muted-foreground hover:bg-muted text-xs px-1.5 sm:px-2"
             >
-              <Download className="w-3 h-3" />
+              <FileText className="w-3.5 h-3.5 text-red-500" />
               <span className="hidden sm:inline">PDF</span>
             </Button>
             <Button
@@ -211,9 +211,9 @@ export default function ProjectPage() {
                   toast.error("Échec de la génération du fichier Excel.");
                 }
               }}
-              className="h-8 gap-1 border border-border bg-transparent text-muted-foreground hover:bg-muted text-xs"
+              className="h-8 gap-1 border border-border bg-transparent text-muted-foreground hover:bg-muted text-xs px-1.5 sm:px-2"
             >
-              <Download className="w-3 h-3" />
+              <FileSpreadsheet className="w-3.5 h-3.5 text-green-600" />
               <span className="hidden sm:inline">Excel</span>
             </Button>
             <Button
