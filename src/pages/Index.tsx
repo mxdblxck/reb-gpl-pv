@@ -188,20 +188,6 @@ export default function Index() {
             </Button>
             <p className="text-xs text-muted-foreground mt-3">Entrez vos charges énergétiques pour chaque site →</p>
           </motion.div>
-
-          {/* PV Image - Below button, centered, larger with negative margins */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex justify-center -mt-8 -mb-4"
-          >
-            <img 
-              src="/icon/home-pv.svg" 
-              alt="Solar PV System" 
-              className="h-72 sm:h-96 md:h-[500px] w-auto object-contain"
-            />
-          </motion.div>
         </div>
 
         {/* Ligne de statistiques - Clickable Cards */}
@@ -259,6 +245,22 @@ export default function Index() {
 
       {/* Sites */}
       <section className="py-12 sm:py-16 px-4 sm:px-6 bg-secondary/30">
+        
+        {/* PV Image - Above Trois Sites, centered, very large with big negative margins */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="flex justify-center -mt-16 -mb-8"
+        >
+          <img 
+            src="/icon/home-pv.svg" 
+            alt="Solar PV System" 
+            className="h-80 sm:h-[450px] md:h-[550px] w-auto object-contain"
+          />
+        </motion.div>
+
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 sm:mb-10">
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
