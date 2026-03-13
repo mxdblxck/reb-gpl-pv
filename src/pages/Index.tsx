@@ -252,7 +252,7 @@ export default function Index() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="flex justify-center -mt-4 -mb-5"
+          className="flex justify-center"
         >
           <img 
             src="/icon/home-pv.svg" 
