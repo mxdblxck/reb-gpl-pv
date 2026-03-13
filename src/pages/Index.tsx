@@ -130,7 +130,7 @@ export default function Index() {
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-28 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 overflow-hidden">
+      <section className="relative pt-20 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 overflow-hidden">
         {/* Solar gradient background */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
         
@@ -195,7 +195,7 @@ export default function Index() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.5 }}
-          className="relative max-w-3xl mx-auto mt-10 sm:mt-16 grid grid-cols-3 gap-3 sm:gap-4">
+          className="relative max-w-3xl mx-auto mt-4 sm:mt-6 grid grid-cols-3 gap-3 sm:gap-4">
           
           {[
             { 
@@ -244,7 +244,7 @@ export default function Index() {
       </section>
 
       {/* Sites */}
-      <section className="py-2 sm:py-3 px-4 sm:px-6 bg-secondary/30">
+      <section className="py-1 px-4 sm:px-6 bg-secondary/30">
         
         {/* PV Image - Above Trois Sites, centered, very large with big negative margins */}
         <motion.div
@@ -252,7 +252,7 @@ export default function Index() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="flex justify-center -mt-8 -mb-16"
+          className="flex justify-center -mt-4 -mb-16"
         >
           <img 
             src="/icon/home-pv.svg" 
