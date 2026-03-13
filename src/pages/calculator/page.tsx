@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Button } from "@/components/ui/button.tsx";
+import { Input } from "@/components/ui/input.tsx";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
@@ -229,7 +230,7 @@ export default function ProjectPage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-6">
-        {/* Facteur de simultanéité */}
+        {/* Facteur de simultanéité et Marge */}
         <Card>
           <CardContent className="py-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
@@ -239,7 +240,7 @@ export default function ProjectPage() {
                   Facteur de simultanéité UTE C15-712-2 x1.3
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground">
                   {applySimultaneity ? "x1.3 appliqué" : "x1.0"}
                 </span>
@@ -247,6 +248,72 @@ export default function ProjectPage() {
                   checked={applySimultaneity}
                   onCheckedChange={setApplySimultaneity}
                 />
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between mt-4 pt-4 border-t border-border">
+              <div className="flex items-start gap-3">
+                <Info className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  Marge de sécurité (%)
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 w-8 p-0 text-sm font-bold"
+                  onClick={() => {
+                    const current = siteParams.BVS1?.margin || 0;
+                    const newMargin = Math.max(0, current - 5);
+                    setSiteParams(prev => {
+                      const newParams = { ...prev };
+                      Object.keys(newParams).forEach(key => {
+                        newParams[key] = { ...newParams[key], margin: newMargin / 100 };
+                      });
+                      return newParams;
+                    });
+                  }}
+                >
+                  -
+                </Button>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={Math.round((siteParams.BVS1?.margin || 0) * 100)}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value) || 0;
+                    setSiteParams(prev => {
+                      const newParams = { ...prev };
+                      Object.keys(newParams).forEach(key => {
+                        newParams[key] = { ...newParams[key], margin: val / 100 };
+                      });
+                      return newParams;
+                    });
+                  }}
+                  className="h-8 w-16 text-sm text-center no-spinner"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 w-8 p-0 text-sm font-bold"
+                  onClick={() => {
+                    const current = siteParams.BVS1?.margin || 0;
+                    const newMargin = Math.min(1, current + 0.05);
+                    setSiteParams(prev => {
+                      const newParams = { ...prev };
+                      Object.keys(newParams).forEach(key => {
+                        newParams[key] = { ...newParams[key], margin: newMargin };
+                      });
+                      return newParams;
+                    });
+                  }}
+                >
+                  +
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -304,9 +371,23 @@ export default function ProjectPage() {
                 </Card>
 
                 {siteParams[sid].energyLoad > 0 ? (
-                  <SiteResultCard
-                    result={calculateSite(siteParams[sid], applySimultaneity)}
-                  />
+                  <>
+                    <SiteResultCard
+                      result={calculateSite(siteParams[sid], applySimultaneity)}
+                    />
+                    {siteParams[sid].margin > 0 && (
+                      <Card className="bg-primary/5 border-primary/20 mt-4">
+                        <CardContent className="py-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Marge appliquée:</span>
+                            <span className="font-bold text-primary">
+                              +{(siteParams[sid].margin * 100).toFixed(0)}% = {(siteParams[sid].energyLoad * (1 + siteParams[sid].margin) * (applySimultaneity ? 1.3 : 1)).toFixed(0)} Wh/j
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
                 ) : (
                   <Card className="border-dashed border-border">
                     <CardContent className="py-10 flex flex-col items-center text-center gap-2">

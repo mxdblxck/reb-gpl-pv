@@ -407,67 +407,9 @@ export default function EnergyLoadInput({
                     <span className="text-xs text-muted-foreground ml-1">
                       Wh/j
                     </span>
-                    {marginPercent > 0 && (
-                      <div className="text-xs text-primary/70">
-                        +{marginPercent}%
-                      </div>
-                    )}
                   </td>
                   <td />
                 </tr>
-                {mode === "detailed" && (
-                  <tr className="bg-primary/5">
-                    <td colSpan={5} className="px-3 pb-2 pt-1">
-                      <div className="flex items-center gap-1">
-                        <Label className="text-xs text-muted-foreground whitespace-nowrap">
-                          Marge (%)
-                        </Label>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="h-6 w-6 p-0 text-xs"
-                          onClick={() => handleMarginIncrement(-5)}
-                        >
-                          -
-                        </Button>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={100}
-                          step={5}
-                          value={marginInputValue}
-                          onChange={(e) => handleMarginInputChange(e.target.value)}
-                          onBlur={() => handleMarginBlur()}
-                          className="h-6 w-14 text-xs text-center no-spinner"
-                        />
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="h-6 w-6 p-0 text-xs"
-                          onClick={() => handleMarginIncrement(5)}
-                        >
-                          +
-                        </Button>
-                        <span className="text-xs text-primary font-medium ml-1">
-                          → {effectiveTotal.toFixed(0)} Wh/j
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-3 pb-2 pt-1 text-right">
-                      <span className="text-xs text-muted-foreground">
-                        {detailedTotal > 0 && (
-                          <>
-                            ≈ {(detailedTotal / 1000).toFixed(3)} kWh/j
-                            {" | "}
-                          </>
-                        )}
-                        {items.filter((i) => i.power > 0).length} charge(s)
-                      </span>
-                    </td>
-                  </tr>
-                )}
               </tfoot>
             </table>
           </div>

@@ -193,7 +193,7 @@ export default function SiteParamsForm({ params, onChange }: Props) {
             </Button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {fields.map((f) => (
+            {fields.filter(f => f.key !== "margin").map((f) => (
               <div key={f.key} className="space-y-1.5 p-2 bg-background/50 rounded-lg border border-border/50">
                 <Label className="text-xs text-muted-foreground flex items-center gap-1">
                   {f.label}
