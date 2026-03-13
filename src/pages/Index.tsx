@@ -195,27 +195,27 @@ export default function Index() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.5 }}
-          className="relative max-w-3xl mx-auto mt-4 sm:mt-6 grid grid-cols-3 gap-1 sm:gap-4">
+          className="relative max-w-3xl mx-auto mt-4 sm:mt-6 grid grid-cols-3 gap-3 sm:gap-4">
           
           {[
             { 
-              label: "Module", 
+              label: "Puissance Module", 
               value: "555 Wp", 
               sub: "Jinko Solar", 
               href: "/datasheets/JKM555-575N-72HL4-(V)-F1-EN.pdf",
               desc: "Module photovoltaïque monocristallin"
             },
             { 
-              label: "Autonomie", 
+              label: "5 jours autonomie", 
               value: "1275Ah/1515Ah", 
-              sub: "HBL Ni-Cd", 
+              sub: "HBL Ni-Cad Batteries", 
               href: "/datasheets/HSL-Ni-Cd-Battery-Leaflet.pdf",
               desc: "Batteries Nickel-Cadmium HBL"
             },
             { 
-              label: "Régulator", 
+              label: "MPPT Regulator", 
               value: "80A/100A", 
-              sub: "Morningstar®", 
+              sub: "Morningstar® Genstar", 
               href: "/datasheets/datasheet-genstar-mppt-en.pdf",
               desc: "Régulateur de charge MPPT"
             },
@@ -226,13 +226,14 @@ export default function Index() {
             href={stat.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-card border border-border rounded-xl p-1 sm:p-4 text-center shadow-sm hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group block">
+            className="bg-card border border-border rounded-xl p-2 sm:p-4 text-center shadow-sm hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group block"
+            title={`${stat.label}\n${stat.sub}`}>
             
               <div className="text-xs sm:text-xl font-bold text-primary group-hover:text-primary/80 transition-colors">{stat.value}</div>
-              <div className="text-[9px] sm:text-xs font-medium text-foreground mt-0.5">
+              <div className="text-[10px] sm:text-xs font-medium text-foreground mt-0.5 truncate">
                 {stat.label}
               </div>
-              <div className="text-[8px] sm:text-xs text-muted-foreground mt-0.5">
+              <div className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 truncate">
                 {stat.sub}
               </div>
               <div className="text-[9px] sm:text-[10px] text-primary/70 mt-1 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
