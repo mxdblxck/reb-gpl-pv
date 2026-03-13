@@ -178,7 +178,7 @@ export function getDefaultSiteParams(siteId: string): SiteParams {
     cellVoltage: 1.2,
     unitaryBatteryCapacity,
     systemVoltage: 48,
-    margin: 0.2, // 20% safety margin
+    margin: 0, // Default: no safety margin (user can add in detailed view)
   };
 }
 

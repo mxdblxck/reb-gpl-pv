@@ -47,9 +47,9 @@ const features = [
 },
 {
   icon: ShieldCheck,
-  title: "Norme UTE C15-712-2",
+  title: "Autonomie 5 Jours",
   description:
-  "Facteur de simultanéité intégré (x1.3) et valeurs PR conservatrices conformes aux normes PV françaises/algériennes."
+  "Capacité des batteries dimensionnée pour 5 jours d'autonomie sans soleil, avec calcul du DOD et configuration optimale par cellule."
 }];
 
 

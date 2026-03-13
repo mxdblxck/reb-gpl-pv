@@ -26,6 +26,7 @@ type Props = {
   totalWh: number; // valeur contrôlée pour le mode simple
   onTotalChange: (wh: number) => void;
   marginPercent?: number; // Current margin percentage (0-100) - for display only
+  onModeChange?: (mode: "simple" | "detailed") => void; // Callback when mode changes
 };
 
 // ── Charges prédéfinies par site ───────────────────────────────────────────────
@@ -100,6 +101,7 @@ export default function EnergyLoadInput({
   totalWh, 
   onTotalChange,
   marginPercent: marginPercentProp = 0,
+  onModeChange,
 }: Props) {
   const [mode, setMode] = useState<"simple" | "detailed">("simple");
   const [items, setItems] = useState<LoadItem[]>([newItem()]);
@@ -128,8 +130,11 @@ export default function EnergyLoadInput({
   // Lors du passage en mode simple depuis le mode détaillé, synchroniser le total
   const handleModeChange = (v: string) => {
     const next = v as "simple" | "detailed";
-    // effectiveTotal useEffect will call onTotalChange automatically
     setMode(next);
+    // Notify parent of mode change
+    if (onModeChange) {
+      onModeChange(next);
+    }
   };
 
   // Mettre à jour un champ d'une ligne de charge

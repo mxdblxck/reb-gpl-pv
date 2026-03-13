@@ -300,6 +300,14 @@ export default function ProjectPage() {
                       totalWh={siteParams[sid].energyLoad}
                       onTotalChange={(wh) => handleEnergyChange(sid, wh)}
                       marginPercent={(siteParams[sid].margin || 0) * 100}
+                      onModeChange={(mode) => {
+                        // Set default margin: 0 for simple, 20% for detailed
+                        const newMargin = mode === "detailed" ? 0.2 : 0;
+                        setSiteParams(prev => ({
+                          ...prev,
+                          [sid]: { ...prev[sid], margin: newMargin }
+                        }));
+                      }}
                     />
                     
                     {/* Marge appliquée info - inside site card */}
