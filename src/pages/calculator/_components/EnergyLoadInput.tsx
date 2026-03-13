@@ -25,8 +25,7 @@ type Props = {
   siteId: string;
   totalWh: number; // valeur contrôlée pour le mode simple
   onTotalChange: (wh: number) => void;
-  marginPercent?: number; // Current margin percentage (0-100)
-  onMarginChange?: (percent: number) => void;
+  marginPercent?: number; // Current margin percentage (0-100) - for display only
 };
 
 // ── Charges prédéfinies par site ───────────────────────────────────────────────
@@ -93,19 +92,21 @@ export default function EnergyLoadInput({
   siteId, 
   totalWh, 
   onTotalChange,
-  marginPercent = 0,
-  onMarginChange
+  marginPercent: marginPercentProp = 0,
 }: Props) {
   const [mode, setMode] = useState<"simple" | "detailed">("simple");
   const [items, setItems] = useState<LoadItem[]>([newItem()]);
   const [showPresets, setShowPresets] = useState(false);
-  const [marginInputValue, setMarginInputValue] = useState<string>(marginPercent.toString());
+  const [marginInputValue, setMarginInputValue] = useState<string>(marginPercentProp.toString());
   const labelId = useId();
+
+  // Get margin from props (controlled by parent)
+  const marginPercent = marginPercentProp;
 
   // Sync margin input value when prop changes
   useEffect(() => {
-    setMarginInputValue(marginPercent.toString());
-  }, [marginPercent]);
+    setMarginInputValue(marginPercentProp.toString());
+  }, [marginPercentProp]);
 
   // Total mode détaillé (base without margin)
   const detailedTotal = items.reduce((sum, it) => sum + calcEnergy(it), 0);
@@ -125,37 +126,6 @@ export default function EnergyLoadInput({
     const next = v as "simple" | "detailed";
     // effectiveTotal useEffect will call onTotalChange automatically
     setMode(next);
-  };
-
-  // Handle margin change - allow free typing
-  const handleMarginInputChange = (value: string) => {
-    setMarginInputValue(value);
-    const num = parseFloat(value);
-    if (!isNaN(num) && num >= 0 && num <= 100) {
-      if (onMarginChange) {
-        onMarginChange(num);
-        // effectiveTotal useEffect will call onTotalChange
-      }
-    }
-  };
-
-  // Handle margin increment/decrement by 5%
-  const handleMarginIncrement = (delta: number) => {
-    const current = parseFloat(marginInputValue) || 0;
-    const newValue = Math.max(0, Math.min(100, current + delta));
-    setMarginInputValue(newValue.toString());
-    if (onMarginChange) {
-      onMarginChange(newValue);
-      // effectiveTotal useEffect will call onTotalChange
-    }
-  };
-
-  // Reset margin input on blur if empty or invalid
-  const handleMarginBlur = () => {
-    const current = parseFloat(marginInputValue);
-    if (isNaN(current) || current < 0) {
-      setMarginInputValue(marginPercent.toString());
-    }
   };
 
   // Mettre à jour un champ d'une ligne de charge
@@ -398,7 +368,17 @@ export default function EnergyLoadInput({
                     <div className="flex items-center gap-2">
                       <Zap className="w-4 h-4 text-primary" />
                       Charge Énergétique Journalière Totale
+                      {marginPercent > 0 && (
+                        <span className="ml-1 text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">
+                          +{marginPercent}%
+                        </span>
+                      )}
                     </div>
+                    {marginPercent > 0 && detailedTotal > 0 && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        Base: {detailedTotal.toFixed(0)} Wh/j → Avec marge: {effectiveTotal.toFixed(0)} Wh/j
+                      </div>
+                    )}
                   </td>
                   <td className="px-3 py-2.5 text-right">
                     <span className="font-bold text-primary text-base">

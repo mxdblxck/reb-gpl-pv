@@ -269,7 +269,6 @@ export default function ProjectPage() {
                       totalWh={siteParams[sid].energyLoad}
                       onTotalChange={(wh) => handleEnergyChange(sid, wh)}
                       marginPercent={(siteParams[sid].margin || 0) * 100}
-                      onMarginChange={(percent) => handleMarginChange(sid, percent)}
                     />
                     <SiteParamsForm
                       params={siteParams[sid]}

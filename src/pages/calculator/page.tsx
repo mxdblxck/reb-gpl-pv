@@ -9,7 +9,7 @@ import { motion } from "motion/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { Switch } from "@/components/ui/switch.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
-import { Sun, Save, Download, Info, AlertCircle } from "lucide-react";
+import { Sun, Save, Download, Info, AlertCircle, Shield } from "lucide-react";
 import SiteParamsForm from "@/pages/calculator/_components/SiteParamsForm.tsx";
 import SiteResultCard from "@/pages/calculator/_components/SiteResultCard.tsx";
 import EnergyCharts from "@/pages/calculator/_components/EnergyCharts.tsx";
@@ -230,7 +230,7 @@ export default function ProjectPage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-6">
-        {/* Facteur de simultanéité et Marge */}
+        {/* Facteur de simultanéité */}
         <Card>
           <CardContent className="py-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
@@ -248,72 +248,6 @@ export default function ProjectPage() {
                   checked={applySimultaneity}
                   onCheckedChange={setApplySimultaneity}
                 />
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between mt-4 pt-4 border-t border-border">
-              <div className="flex items-start gap-3">
-                <Info className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                <p className="text-sm text-muted-foreground">
-                  Marge de sécurité (%)
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-8 w-8 p-0 text-sm font-bold"
-                  onClick={() => {
-                    const current = siteParams.BVS1?.margin || 0;
-                    const newMargin = Math.max(0, current - 5);
-                    setSiteParams(prev => {
-                      const newParams = { ...prev };
-                      Object.keys(newParams).forEach(key => {
-                        newParams[key] = { ...newParams[key], margin: newMargin / 100 };
-                      });
-                      return newParams;
-                    });
-                  }}
-                >
-                  -
-                </Button>
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={Math.round((siteParams.BVS1?.margin || 0) * 100)}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setSiteParams(prev => {
-                      const newParams = { ...prev };
-                      Object.keys(newParams).forEach(key => {
-                        newParams[key] = { ...newParams[key], margin: val / 100 };
-                      });
-                      return newParams;
-                    });
-                  }}
-                  className="h-8 w-16 text-sm text-center no-spinner"
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-8 w-8 p-0 text-sm font-bold"
-                  onClick={() => {
-                    const current = siteParams.BVS1?.margin || 0;
-                    const newMargin = Math.min(1, current + 0.05);
-                    setSiteParams(prev => {
-                      const newParams = { ...prev };
-                      Object.keys(newParams).forEach(key => {
-                        newParams[key] = { ...newParams[key], margin: newMargin };
-                      });
-                      return newParams;
-                    });
-                  }}
-                >
-                  +
-                </Button>
               </div>
             </div>
           </CardContent>
@@ -334,6 +268,84 @@ export default function ProjectPage() {
               Comparaison
             </TabsTrigger>
           </TabsList>
+
+          {/* Marge de sécurité - below tabs */}
+          <Card className="mt-4 border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
+            <CardContent className="py-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-primary" />
+                  <span className="text-sm font-medium text-foreground">
+                    Marge de sécurité
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    (ajouter une marge supplémentaire)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 w-8 p-0 text-sm font-bold border-primary/30 text-primary hover:bg-primary/10"
+                    onClick={() => {
+                      const current = siteParams.BVS1?.margin || 0;
+                      const newMargin = Math.max(0, current - 0.05);
+                      setSiteParams(prev => {
+                        const newParams = { ...prev };
+                        Object.keys(newParams).forEach(key => {
+                          newParams[key] = { ...newParams[key], margin: newMargin };
+                        });
+                        return newParams;
+                      });
+                    }}
+                  >
+                    -
+                  </Button>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={Math.round((siteParams.BVS1?.margin || 0) * 100)}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setSiteParams(prev => {
+                        const newParams = { ...prev };
+                        Object.keys(newParams).forEach(key => {
+                          newParams[key] = { ...newParams[key], margin: val / 100 };
+                        });
+                        return newParams;
+                      });
+                    }}
+                    className="h-8 w-16 text-sm text-center no-spinner border-primary/30"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 w-8 p-0 text-sm font-bold border-primary/30 text-primary hover:bg-primary/10"
+                    onClick={() => {
+                      const current = siteParams.BVS1?.margin || 0;
+                      const newMargin = Math.min(1, current + 0.05);
+                      setSiteParams(prev => {
+                        const newParams = { ...prev };
+                        Object.keys(newParams).forEach(key => {
+                          newParams[key] = { ...newParams[key], margin: newMargin };
+                        });
+                        return newParams;
+                      });
+                    }}
+                  >
+                    +
+                  </Button>
+                  <span className="text-sm font-bold text-primary ml-2">
+                    %
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {SITES.map((sid) => (
             <TabsContent key={sid} value={sid} className="mt-4 space-y-4">
@@ -361,7 +373,8 @@ export default function ProjectPage() {
                     <EnergyLoadInput
                       siteId={sid}
                       totalWh={siteParams[sid].energyLoad}
-                      onTotalChange={(wh) => handleEnergyChange(sid, wh)} 
+                      onTotalChange={(wh) => handleEnergyChange(sid, wh)}
+                      marginPercent={(siteParams[sid].margin || 0) * 100}
                     />
                     <SiteParamsForm
                       params={siteParams[sid]}
