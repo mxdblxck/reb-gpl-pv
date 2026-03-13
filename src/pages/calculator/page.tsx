@@ -114,16 +114,19 @@ export default function ProjectPage() {
         toast.success("Projet mis à jour.");
       } else {
         // Create new project
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+        const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
         const newProject: LocalProject = {
           id: generateId(),
-          name: "Nouveau Projet",
+          name: `Nouvel Essai - ${dateStr} ${timeStr}`,
           sites: siteData,
-          updatedAt: new Date().toISOString(),
+          updatedAt: now.toISOString(),
         };
         const updatedProjects = [...projects, newProject];
         setProjects(updatedProjects);
         saveProjects(updatedProjects);
-        toast.success("Projet créé!");
+        toast.success("Essai créé!");
         // Navigate to dashboard
         navigate("/dashboard");
       }
@@ -178,7 +181,7 @@ export default function ProjectPage() {
                   <Sun className="w-3 h-3 text-white" />
                 </div>
                 <span className="font-semibold text-sm text-foreground truncate max-w-[120px] sm:max-w-none">
-                  {project ? project.name : "Nouveau Projet"}
+                  {project ? project.name : "Nouvel Essai"}
                 </span>
               </div>
               {project?.description && (

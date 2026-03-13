@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api.js";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { ArrowLeft, Sun, Save, Download, Info, AlertCircle, FileText, FileSpreadsheet } from "lucide-react";
@@ -17,19 +15,70 @@ import EnergyLoadInput from "./_components/EnergyLoadInput.tsx";
 import type { SiteParams, SiteResult } from "@/lib/solar-calc.ts";
 import { SITES, getDefaultSiteParams, calculateSite, getSiteFullName } from "@/lib/solar-calc.ts";
 import { generateSizingPDF, generateExcel } from "@/lib/pdf-export.ts";
-import { ConvexError } from "convex/values";
-import type { Id } from "@/convex/_generated/dataModel.d.ts";
+
+// Types
+type LocalProject = {
+  id: string;
+  name: string;
+  sites: SiteParams[];
+  notes?: string;
+  description?: string;
+  updatedAt: string;
+};
+
+// Load/save functions for localStorage
+function loadProjects(): LocalProject[] {
+  try {
+    const stored = localStorage.getItem("solar_projects");
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveProjects(projects: LocalProject[]): void {
+  localStorage.setItem("solar_projects", JSON.stringify(projects));
+}
 
 export default function ProjectPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  
+  // Use local storage
+  const [projects, setProjects] = useState<LocalProject[]>(() => loadProjects());
+  
+  // If no ID, redirect to calculator
+  useEffect(() => {
+    if (!id) {
+      navigate("/calculator");
+    }
+  }, [id, navigate]);
 
-  const project = useQuery(
-    api.projects.getProject,
-    id ? { projectId: id as Id<"projects"> } : "skip"
-  );
+  // Find current project by ID - if not found, show empty state
+  const project = id ? projects.find(p => p.id === id) ?? null : null;
+  
+  // If we have an ID but project is not found yet (initial load), show loading
+  const isLoading = id && projects.length === 0;
 
-  const updateProject = useMutation(api.projects.updateProject);
+  if (isLoading) {
+    return (
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-8 space-y-4">
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (project === null && id) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4">
+        <p className="text-muted-foreground text-center">Essai introuvable.</p>
+        <Button onClick={() => navigate("/dashboard")} className="gap-1.5">
+          <ArrowLeft className="w-4 h-4" /> Retour au Tableau de Bord
+        </Button>
+      </div>
+    );
+  }
 
   const [activeTab, setActiveTab] = useState("BVS1");
   const [applySimultaneity, setApplySimultaneity] = useState(false);
@@ -46,7 +95,6 @@ export default function ProjectPage() {
         SITES.map((sid) => [sid, getDefaultSiteParams(sid)])
       );
       (project.sites as SiteParams[]).forEach((s) => {
-        // Ensure margin field exists for older projects
         map[s.siteId] = { ...s, margin: (s as any).margin ?? 0.2 };
       });
       setSiteParams(map);
@@ -80,24 +128,22 @@ export default function ProjectPage() {
     setSiteParams((prev) => ({ ...prev, [siteId]: updated }));
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!id) return;
     setIsSaving(true);
     try {
-      await updateProject({
-        projectId: id as Id<"projects">,
-        sites: SITES.map((sid) => siteParams[sid]),
-      });
-      toast.success("Projet mis à jour.");
+      const updatedProjects = projects.map(p => 
+        p.id === id 
+          ? { ...p, sites: SITES.map((sid) => siteParams[sid]), updatedAt: new Date().toISOString() }
+          : p
+      );
+      setProjects(updatedProjects);
+      saveProjects(updatedProjects);
+      toast.success("Essai mis à jour.");
       // Navigate to dashboard after save
       navigate("/dashboard");
-    } catch (err) {
-      if (err instanceof ConvexError) {
-        const data = err.data as { message: string };
-        toast.error(data.message);
-      } else {
-        toast.error("Échec de la sauvegarde des modifications.");
-      }
+    } catch {
+      toast.error("Échec de la sauvegarde des modifications.");
     } finally {
       setIsSaving(false);
     }
