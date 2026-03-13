@@ -143,7 +143,7 @@ function ProjectCard({
 
         <Button size="sm" onClick={onLoad} className="w-full h-8 gap-1.5 text-xs">
           <FolderOpen className="w-3.5 h-3.5" />
-          Charger le Projet
+          Charger l'Essai
         </Button>
       </CardContent>
     </Card>
@@ -167,7 +167,7 @@ export default function DashboardPage() {
     const updatedProjects = projects.filter((p) => p.id !== deleteId);
     setProjects(updatedProjects);
     saveProjects(updatedProjects);
-    toast.success("Projet supprimé.");
+    toast.success("Essai supprimé.");
     setDeleteId(null);
   };
 
@@ -219,7 +219,7 @@ export default function DashboardPage() {
                     {projects.length}
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
-                    Projets Sauvegardés
+                    Essais Sauvegardés
                   </div>
                 </CardContent>
               </Card>
@@ -259,7 +259,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Grille des projets */}
+          {/* Grille des essais */}
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -276,7 +276,7 @@ export default function DashboardPage() {
                   Aucun essai pour l'instant
                 </h3>
                 <p className="text-sm text-muted-foreground max-w-xs">
-                  Démarrez un nouveau calcul de dimensionnement et sauvegardez-le dans votre bibliothèque de projets
+                  Démarrez un nouveau calcul de dimensionnement et sauvegardez-le dans votre bibliothèque d'essais
                 </p>
               </div>
               <Button
@@ -284,7 +284,7 @@ export default function DashboardPage() {
                 className="gap-1.5"
               >
                 <Calculator className="w-4 h-4" />
-                Nouveau Calcul
+                Nouvel Essai
               </Button>
             </div>
           ) : (
@@ -313,9 +313,9 @@ export default function DashboardPage() {
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Supprimer le Projet ?</AlertDialogTitle>
+              <AlertDialogTitle>Supprimer l'Essai ?</AlertDialogTitle>
               <AlertDialogDescription>
-                Cette action est irréversible. Le projet et toutes ses données de
+                Cette action est irréversible. L'essai et toutes ses données de
                 dimensionnement seront définitivement supprimés.
               </AlertDialogDescription>
             </AlertDialogHeader>
