@@ -167,6 +167,20 @@ export default function Index() {
             Dimensionnement du système photovoltaique <span className="text-primary">Off-Grid</span> du projet
           </motion.h1>
 
+          {/* PV Image - Left aligned */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex justify-start max-w-4xl mx-auto mb-6 sm:mb-8"
+          >
+            <img 
+              src="/icon/home-pv.svg" 
+              alt="Solar PV System" 
+              className="h-28 sm:h-36 md:h-40 w-auto object-contain"
+            />
+          </motion.div>
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
