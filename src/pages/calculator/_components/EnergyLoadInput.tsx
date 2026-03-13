@@ -410,11 +410,18 @@ export default function EnergyLoadInput({
 
           {/* Indication de synchronisation */}
           {detailedTotal > 0 && (
-            <p className="text-[11px] text-muted-foreground">
-              Dimensionnement calculé avec{" "}
-              <strong className="text-primary">{detailedTotal.toFixed(0)} Wh/j</strong>{" "}
-              issu du tableau ci-dessus
-            </p>
+            <div className="mt-2 p-2 bg-muted/50 rounded-md">
+              <p className="text-xs text-muted-foreground">
+                Dimensionnement calculé avec{" "}
+                <strong className="text-primary">{detailedTotal.toFixed(0)} Wh/j</strong>{" "}
+                issu du tableau ci-dessus
+              </p>
+              {marginPercent > 0 && (
+                <p className="text-xs text-primary font-medium mt-1">
+                  +{marginPercent}% = <strong>{(detailedTotal * (1 + marginPercent / 100)).toFixed(0)} Wh/j</strong>
+                </p>
+              )}
+            </div>
           )}
         </div>
       )}
