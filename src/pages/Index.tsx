@@ -130,7 +130,7 @@ export default function Index() {
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-20 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 overflow-hidden">
+      <section className="relative pt-20 sm:pt-24 pb-12 sm:pb-5 px-4 sm:px-6 overflow-hidden">
         {/* Solar gradient background */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
         
@@ -252,7 +252,7 @@ export default function Index() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="flex justify-center -mt-4 -mb-12"
+          className="flex justify-center -mt-4 -mb-5"
         >
           <img 
             src="/icon/home-pv.svg" 
