@@ -189,17 +189,17 @@ export default function Index() {
             <p className="text-xs text-muted-foreground mt-3">Entrez vos charges énergétiques pour chaque site →</p>
           </motion.div>
 
-          {/* PV Image - Below button, centered */}
+          {/* PV Image - Below button, centered, larger with negative margins */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex justify-center mt-8 sm:mt-10"
+            className="flex justify-center -mt-8 -mb-4"
           >
             <img 
               src="/icon/home-pv.svg" 
               alt="Solar PV System" 
-              className="h-56 sm:h-72 md:h-80 w-auto object-contain"
+              className="h-72 sm:h-96 md:h-[500px] w-auto object-contain"
             />
           </motion.div>
         </div>
