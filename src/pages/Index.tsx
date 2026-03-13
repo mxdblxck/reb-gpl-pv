@@ -244,20 +244,20 @@ export default function Index() {
       </section>
 
       {/* Sites */}
-      <section className="py-1 px-4 sm:px-6 bg-secondary/30">
+      <section className="py-2 px-4 sm:px-6 bg-secondary/30">
         
-        {/* PV Image - Above Trois Sites, centered, very large with big negative margins */}
+        {/* PV Image - Above Trois Sites, centered */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="flex justify-center -mt-4 -mb-16"
+          className="flex justify-center -mt-4 -mb-12"
         >
           <img 
             src="/icon/home-pv.svg" 
             alt="Solar PV System" 
-            className="h-80 sm:h-[450px] md:h-[550px] w-auto object-contain"
+            className="h-40 sm:h-56 md:h-72 w-auto object-contain"
           />
         </motion.div>
 
