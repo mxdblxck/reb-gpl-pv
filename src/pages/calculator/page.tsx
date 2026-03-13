@@ -302,6 +302,16 @@ export default function ProjectPage() {
                       marginPercent={(siteParams[sid].margin || 0) * 100}
                     />
                     
+                    {/* Marge appliquée info - inside site card */}
+                    {siteParams[sid].margin > 0 && siteParams[sid].energyLoad > 0 && (
+                      <div className="flex items-center justify-between text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-md">
+                        <span className="font-medium">Marge appliquée:</span>
+                        <span className="font-bold">
+                          +{(siteParams[sid].margin * 100).toFixed(0)}% = {(siteParams[sid].energyLoad * (1 + siteParams[sid].margin)).toFixed(0)} Wh/j
+                        </span>
+                      </div>
+                    )}
+                    
                     {/* Marge de sécurité - inside site card */}
                     <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
                       <CardContent className="py-2 px-4">
@@ -385,18 +395,6 @@ export default function ProjectPage() {
                     <SiteResultCard
                       result={calculateSite(siteParams[sid], applySimultaneity)}
                     />
-                    {siteParams[sid].margin > 0 && (
-                      <Card className="bg-primary/5 border-primary/20 mt-4">
-                        <CardContent className="py-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Marge appliquée:</span>
-                            <span className="font-bold text-primary">
-                              +{(siteParams[sid].margin * 100).toFixed(0)}% = {(siteParams[sid].energyLoad * (1 + siteParams[sid].margin) * (applySimultaneity ? 1.3 : 1)).toFixed(0)} Wh/j
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
                   </>
                 ) : (
                   <Card className="border-dashed border-border">
