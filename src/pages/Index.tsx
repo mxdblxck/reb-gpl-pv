@@ -244,7 +244,7 @@ export default function Index() {
       </section>
 
       {/* Sites */}
-      <section className="py-6 sm:py-8 px-4 sm:px-6 bg-secondary/30">
+      <section className="py-2 sm:py-3 px-4 sm:px-6 bg-secondary/30">
         
         {/* PV Image - Above Trois Sites, centered, very large with big negative margins */}
         <motion.div
@@ -252,7 +252,7 @@ export default function Index() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="flex justify-center -mt-32 -mb-16"
+          className="flex justify-center -mt-8 -mb-16"
         >
           <img 
             src="/icon/home-pv.svg" 
