@@ -11,7 +11,8 @@ import {
   Zap,
   Calculator,
   ChevronRight,
-  CheckCircle2 } from
+  CheckCircle2,
+  Cloud } from
 "lucide-react";
 
 const features = [
@@ -37,7 +38,8 @@ const features = [
   icon: FolderOpen,
   title: "Saisie Détaillée des Charges",
   description:
-  "Saisir les charges énergétiques en total ou les détailler ligne par ligne par équipement : RTU, CPCU, Télécoms, Éclairage, SDV.. etc"
+  "Saisir les charges énergétiques en total ou les détailler ligne par ligne par équipement : RTU, CPCU, Télécoms, Éclairage, SDV.. etc",
+  href: "/datasheets/bilandepuissance.pdf"
 },
 {
   icon: FileDown,
@@ -46,10 +48,10 @@ const features = [
   "Générer des rapports de dimensionnement professionnels avec les tableaux de calcul complets, les formules et les résultats des trois sites."
 },
 {
-  icon: FolderOpen,
+  icon: Cloud,
   title: "Enregistrer Localement",
   description:
-  "Sauvegardez vos projets et calculs localement sur votre appareil et reprenez vos sessions à tout moment avec toutes les données enregistrées."
+  "Sauvegardez vos calculs localement sur votre appareil et reprenez vos sessions à tout moment avec toutes les données enregistrées."
 }];
 
 
@@ -318,14 +320,30 @@ export default function Index() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {features.map((f, i) =>
-            <motion.div
-              key={f.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
-              className="bg-card border border-border rounded-xl p-4 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all cursor-pointer group">
-              
+            f.href ? (
+              <a
+                key={f.title}
+                href={f.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-card border border-border rounded-xl p-4 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all cursor-pointer group block">
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
+                  <f.icon className="w-5 h-5 text-primary" />
+                </div>
+                <h3 className="font-semibold text-foreground mb-2 text-sm">{f.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                  {f.description}
+                </p>
+              </a>
+            ) : (
+              <motion.div
+                key={f.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08 }}
+                className="bg-card border border-border rounded-xl p-4 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all cursor-pointer group">
+                
                 <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
                   <f.icon className="w-5 h-5 text-primary" />
                 </div>
@@ -334,7 +352,7 @@ export default function Index() {
                   {f.description}
                 </p>
               </motion.div>
-            )}
+            ))}
           </div>
         </div>
       </section>
