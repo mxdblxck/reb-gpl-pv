@@ -226,17 +226,17 @@ export default function Index() {
             href={stat.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-card border border-border rounded-xl p-2 sm:p-4 text-center shadow-sm hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group block"
+            className="bg-card border border-border rounded-xl p-3 sm:p-4 text-center shadow-sm hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group block"
             title={`${stat.label}\n${stat.sub}`}>
             
               <div className="text-xs sm:text-xl font-bold text-primary group-hover:text-primary/80 transition-colors">{stat.value}</div>
-              <div className="text-[10px] sm:text-xs font-medium text-foreground mt-0.5 truncate">
+              <div className="text-[10px] sm:text-xs font-medium text-foreground mt-1 truncate">
                 {stat.label}
               </div>
-              <div className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 truncate">
+              <div className="text-[9px] sm:text-xs text-muted-foreground mt-1 truncate">
                 {stat.sub}
               </div>
-              <div className="text-[9px] sm:text-[10px] text-primary/70 mt-1 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
+              <div className="text-[9px] sm:text-[10px] text-primary/70 mt-2 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
                 📄 Fiche technique
               </div>
           </a>
