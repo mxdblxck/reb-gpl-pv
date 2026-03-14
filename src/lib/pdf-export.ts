@@ -701,18 +701,15 @@ export function generateExcel(results: SiteResult[], projectName?: string): void
       createCell(row[1] === "margin" ? ((results[0]?.params.margin || 0) * 100).toFixed(0) + "%" : 
                 row[1] === "dod" ? (results[0]?.params.dod || 0).toString() :
                 row[1] === "batteryEfficiency" ? ((results[0]?.params.batteryEfficiency || 0) * 100).toFixed(0) + "%" :
-                row[1] === "pr" ? (results[0]?.params.pr || 0).toString() :
-                String(results[0]?.params[row[1 as keyof typeof results[0]['params']] || ""), false, bg),
+                row[1] === "pr" ? (results[0]?.params.pr || 0).toString() : "-", false, bg),
       createCell(row[1] === "margin" ? ((results[1]?.params.margin || 0) * 100).toFixed(0) + "%" : 
                 row[1] === "dod" ? (results[1]?.params.dod || 0).toString() :
                 row[1] === "batteryEfficiency" ? ((results[1]?.params.batteryEfficiency || 0) * 100).toFixed(0) + "%" :
-                row[1] === "pr" ? (results[1]?.params.pr || 0).toString() :
-                String(results[1]?.params[row[1 as keyof typeof results[1]['params']] || ""), false, bg),
+                row[1] === "pr" ? (results[1]?.params.pr || 0).toString() : "-", false, bg),
       createCell(row[1] === "margin" ? ((results[2]?.params.margin || 0) * 100).toFixed(0) + "%" : 
                 row[1] === "dod" ? (results[2]?.params.dod || 0).toString() :
                 row[1] === "batteryEfficiency" ? ((results[2]?.params.batteryEfficiency || 0) * 100).toFixed(0) + "%" :
-                row[1] === "pr" ? (results[2]?.params.pr || 0).toString() :
-                String(results[2]?.params[row[1 as keyof typeof results[2]['params']] || ""), false, bg),
+                row[1] === "pr" ? (results[2]?.params.pr || 0).toString() : "-", false, bg),
     ]);
   });
   
