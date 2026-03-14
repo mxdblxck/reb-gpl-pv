@@ -390,72 +390,122 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
   doc.save(fileName);
 }
 
-// Excel Export function - Beautiful and organized
+// Excel Export function - Beautiful and organized with site colors
 export function generateExcel(results: SiteResult[], projectName?: string): void {
   const wb = XLSX.utils.book_new();
   
   // Helper: Convert hex to RGB
   const hexToRgb = (hex: string) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : [0, 0, 0];
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 0, g: 0, b: 0 };
   };
   
   const ORANGE = hexToRgb('#FF6600');
   const DARK = hexToRgb('#1E1414');
-  const GRAY = hexToRgb('#F5F5F5');
+  const LIGHT = hexToRgb('#FFF7ED');
+  const WHITE = { r: 255, g: 255, b: 255 };
+  const GRAY = hexToRgb('#6B7280');
+  const LIGHT_GRAY = hexToRgb('#F3F4F6');
+  
+  // Helper to create styled cell
+  const createCell = (value: any, bold = false, bgColor: typeof ORANGE | null = null, fontColor: typeof ORANGE = DARK): any => ({
+    v: value,
+    s: {
+      font: { bold, color: { rgb: fontColor === DARK ? '1E1414' : 'FFFFFF' } },
+      fill: bgColor ? { fgColor: { rgb: bgColor === ORANGE ? 'FF6600' : 'F3F4F6' } } : undefined,
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: {
+        left: { style: 'thin', color: { rgb: 'E5E7EB' } },
+        right: { style: 'thin', color: { rgb: 'E5E7EB' } },
+        top: { style: 'thin', color: { rgb: 'E5E7EB' } },
+        bottom: { style: 'thin', color: { rgb: 'E5E7EB' } },
+      },
+    },
+  });
   
   // ═══════════════════════════════════════════════════════════════════════════
   // FEUILLE 1: RÉSUMÉ DU PROJET
   // ═══════════════════════════════════════════════════════════════════════════
-  const summaryData: (string | number)[][] = [];
+  const summaryData: any[][] = [];
   
-  // En-tête projet
-  summaryData.push(
-    ["SONATRACH - REB GPL LIGNE", "", "", "", "", "", ""],
-    ["Projet: " + (projectName || "Dimensionnement PV"), "", "", "", "", "", ""],
-    ["Date: " + new Date().toLocaleDateString('fr-FR'), "", "", "", "", "", ""],
-    ["", "", "", "", "", "", ""]
-  );
+  // En-tête projet - Title row
+  summaryData.push([
+    createCell("SONATRACH - REB GPL LIGNE", true, ORANGE, WHITE),
+    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
+    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
+  ]);
   
-  // En-têtes tableau
+  // Project name
+  summaryData.push([
+    createCell(`Projet: ${projectName || "Dimensionnement PV"}`, true),
+    createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""),
+  ]);
+  
+  // Date
+  summaryData.push([
+    createCell(`Date: ${new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}`),
+    createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""),
+  ]);
+  
+  summaryData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
+  
+  // En-têtes tableau avec fond orange
   const headers = ["Site", "Énergie (Wh/j)", "Puissance PV (kWp)", "Modules", "Config PV", "Capacité Batt (Ah)", "Config Batt"];
-  summaryData.push(headers);
+  summaryData.push(headers.map(h => createCell(h, true, LIGHT_GRAY)));
   
-  // Données
-  results.forEach(r => {
+  // Données avec alternance
+  results.forEach((r, idx) => {
+    const bg = idx % 2 === 0 ? null : LIGHT_GRAY;
     summaryData.push([
-      r.siteId,
-      Math.round(r.correctedEnergyLoad),
-      (r.pv.actualPvPower / 1000).toFixed(2),
-      r.pv.totalModules,
-      r.pv.configLabel,
-      Math.round(r.battery.actualCapacityAh),
-      r.battery.configLabel,
+      createCell(r.siteId, true, bg ? bg : null, ORANGE),
+      createCell(Math.round(r.correctedEnergyLoad), false, bg),
+      createCell((r.pv.actualPvPower / 1000).toFixed(2), false, bg),
+      createCell(r.pv.totalModules, false, bg),
+      createCell(r.pv.configLabel, false, bg),
+      createCell(Math.round(r.battery.actualCapacityAh), false, bg),
+      createCell(r.battery.configLabel, false, bg),
     ]);
   });
   
-  summaryData.push(["", "", "", "", "", "", ""]);
-  summaryData.push(["Paramètres utilisés", "", "", "", "", "", ""]);
+  summaryData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
+  summaryData.push([createCell("PARAMÈTRES DE CALCUL", true, ORANGE, WHITE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE)]);
+  
   if (results[0]) {
-    summaryData.push(["PSH (pire mois)", results[0].params.psh + " h/jour"]);
-    summaryData.push(["PR (Performance Ratio)", results[0].params.pr]);
-    summaryData.push(["Tension système", results[0].params.systemVoltage + " V DC"]);
-    summaryData.push(["Autonomie", results[0].params.autonomy + " jours"]);
-    summaryData.push(["DOD", (results[0].params.dod * 100).toFixed(0) + "%"]);
-    summaryData.push(["Marge", ((results[0].params.margin || 0) * 100).toFixed(0) + "%"]);
+    const p = results[0].params;
+    const paramsData = [
+      ["PSH (pire mois)", `${p.psh} h/jour`],
+      ["PR (Performance Ratio)", p.pr.toString()],
+      ["Tension système", `${p.systemVoltage} V DC`],
+      ["Autonomie", `${p.autonomy} jours`],
+      ["DOD", `${(p.dod * 100).toFixed(0)}%`],
+      ["Rendement batteries", `${(p.batteryEfficiency * 100).toFixed(0)}%`],
+      ["Capacité unitaire", `${p.unitaryBatteryCapacity} Ah`],
+      ["Marge de sécurité", `${((p.margin || 0) * 100).toFixed(0)}%`],
+    ];
+    paramsData.forEach((row, idx) => {
+      summaryData.push([
+        createCell(row[0], true, idx % 2 === 0 ? null : LIGHT_GRAY),
+        createCell(row[1], false, idx % 2 === 0 ? null : LIGHT_GRAY),
+        createCell(""), createCell(""), createCell(""), createCell(""), createCell(""),
+      ]);
+    });
   }
   
   const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
   
   // Set column widths
   wsSummary['!cols'] = [
-    { wch: 8 },  // Site
-    { wch: 15 }, // Energie
-    { wch: 15 }, // Puissance PV
-    { wch: 8 },  // Modules
-    { wch: 12 }, // Config PV
-    { wch: 15 }, // Capacité Batt
-    { wch: 12 }, // Config Batt
+    { wch: 10 },  // Site
+    { wch: 18 }, // Energie
+    { wch: 18 }, // Puissance PV
+    { wch: 10 }, // Modules
+    { wch: 16 }, // Config PV
+    { wch: 18 }, // Capacité Batt
+    { wch: 16 }, // Config Batt
   ];
   
   // Merge cells for header
@@ -463,6 +513,8 @@ export function generateExcel(results: SiteResult[], projectName?: string): void
     { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // SONATRACH title
     { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // Project name
     { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } }, // Date
+    { s: { r: 5, c: 0 }, e: { r: 5, c: 6 } }, // Headers
+    { s: { r: 7, c: 0 }, e: { r: 7, c: 6 } }, // Params title
   ];
   
   XLSX.utils.book_append_sheet(wb, wsSummary, "Résumé");
@@ -470,89 +522,207 @@ export function generateExcel(results: SiteResult[], projectName?: string): void
   // ═══════════════════════════════════════════════════════════════════════════
   // FEUILLE 2: DÉTAIL SYSTÈME PV
   // ═══════════════════════════════════════════════════════════════════════════
-  const pvData: (string | number)[][] = [];
-  pvData.push(["DÉTAIL SYSTÈME PHOTOVOLTAÏQUE", "", "", "", "", "", "", ""]);
-  pvData.push(["", "", "", "", "", "", "", ""]);
-  pvData.push(["Site", "Puissance Requise (Wp)", "Puissance Installée (Wp)", "Modules Total", "Modules/Groupe", "Groupes", "Série/String", "Strings//Groupe"]);
+  const pvData: any[][] = [];
+  pvData.push([
+    createCell("DÉTAIL SYSTÈME PHOTOVOLTAÏQUE", true, ORANGE, WHITE),
+    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
+    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
+  ]);
+  pvData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
   
-  results.forEach(r => {
+  const pvHeaders = ["Site", "Puissance Requise (Wp)", "Puissance Installée (Wp)", "Modules Total", "Modules/Groupe", "Groupes", "Série/String", "Strings/Groupe"];
+  pvData.push(pvHeaders.map(h => createCell(h, true, LIGHT_GRAY)));
+  
+  results.forEach((r, idx) => {
+    const bg = idx % 2 === 0 ? null : LIGHT_GRAY;
     pvData.push([
-      r.siteId,
-      Math.round(r.pv.pvRequiredWp),
-      Math.round(r.pv.actualPvPower),
-      r.pv.totalModules,
-      r.pv.nModulesPerGroup,
-      r.params.groups,
-      r.pv.seriesPerGroup,
-      r.pv.parallelStrings,
+      createCell(r.siteId, true, bg ? bg : null, ORANGE),
+      createCell(Math.round(r.pv.pvRequiredWp), false, bg),
+      createCell(Math.round(r.pv.actualPvPower), false, bg),
+      createCell(r.pv.totalModules, false, bg),
+      createCell(r.pv.nModulesPerGroup, false, bg),
+      createCell(r.params.groups, false, bg),
+      createCell(r.pv.seriesPerGroup, false, bg),
+      createCell(r.pv.parallelStrings, false, bg),
     ]);
   });
   
+  // Add formulas explanation
+  pvData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
+  pvData.push([createCell("FORMULES UTILISÉES", true, ORANGE, WHITE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE)]);
+  pvData.push([
+    createCell("Formule", true, LIGHT_GRAY), createCell("E = Energie journalière (Wh/j)", false, LIGHT_GRAY), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")
+  ]);
+  pvData.push([
+    createCell("", true, LIGHT_GRAY), createCell("P_pv = E / (PSH × PR)", false, LIGHT_GRAY), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")
+  ]);
+  pvData.push([
+    createCell("", true, LIGHT_GRAY), createCell("N_modules = P_pv / P_module", false, LIGHT_GRAY), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")
+  ]);
+  
   const wsPV = XLSX.utils.aoa_to_sheet(pvData);
   wsPV['!cols'] = [
-    { wch: 8 }, { wch: 18 }, { wch: 18 }, { wch: 12 },
-    { wch: 14 }, { wch: 8 }, { wch: 12 }, { wch: 14 },
+    { wch: 10 }, { wch: 20 }, { wch: 20 }, { wch: 14 },
+    { wch: 16 }, { wch: 10 }, { wch: 14 }, { wch: 16 },
   ];
-  wsPV['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
+  wsPV['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 7 } },
+    { s: { r: 5 + results.length, c: 0 }, e: { r: 5 + results.length, c: 7 } },
+    { s: { r: 7 + results.length, c: 0 }, e: { r: 7 + results.length, c: 0 } },
+    { s: { r: 8 + results.length, c: 0 }, e: { r: 8 + results.length, c: 0 } },
+    { s: { r: 9 + results.length, c: 0 }, e: { r: 9 + results.length, c: 0 } },
+  ];
   XLSX.utils.book_append_sheet(wb, wsPV, "Système PV");
   
   // ═══════════════════════════════════════════════════════════════════════════
   // FEUILLE 3: DÉTAIL BATTERIES
   // ═══════════════════════════════════════════════════════════════════════════
-  const battData: (string | number)[][] = [];
-  battData.push(["DÉTAIL PARC BATTERIES", "", "", "", "", "", "", ""]);
-  battData.push(["", "", "", "", "", "", "", ""]);
-  battData.push(["Site", "Capacité Requise (Ah)", "Capacité Installée (Ah)", "Énergie (Wh)", "Cellules Série", "Branches Parall", "Total Cellules", "Configuration"]);
+  const battData: any[][] = [];
+  battData.push([
+    createCell("DÉTAIL PARC BATTERIES", true, ORANGE, WHITE),
+    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
+    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
+  ]);
+  battData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
   
-  results.forEach(r => {
+  const battHeaders = ["Site", "Capacité Requise (Ah)", "Capacité Installée (Ah)", "Énergie (Wh)", "Cellules Série", "Branches Parall", "Total Cellules", "Configuration"];
+  battData.push(battHeaders.map(h => createCell(h, true, LIGHT_GRAY)));
+  
+  results.forEach((r, idx) => {
+    const bg = idx % 2 === 0 ? null : LIGHT_GRAY;
     battData.push([
-      r.siteId,
-      Math.round(r.battery.capacityAh),
-      Math.round(r.battery.actualCapacityAh),
-      Math.round(r.battery.actualCapacityWh),
-      r.battery.cellsInSeries,
-      r.battery.parallelBranches,
-      r.battery.totalCells,
-      r.battery.configLabel,
+      createCell(r.siteId, true, bg ? bg : null, ORANGE),
+      createCell(Math.round(r.battery.capacityAh), false, bg),
+      createCell(Math.round(r.battery.actualCapacityAh), false, bg),
+      createCell(Math.round(r.battery.actualCapacityWh), false, bg),
+      createCell(r.battery.cellsInSeries, false, bg),
+      createCell(r.battery.parallelBranches, false, bg),
+      createCell(r.battery.totalCells, false, bg),
+      createCell(r.battery.configLabel, false, bg),
     ]);
   });
   
+  // Add formulas
+  battData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
+  battData.push([createCell("FORMULES UTILISÉES", true, ORANGE, WHITE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE)]);
+  battData.push([
+    createCell("Formule", true, LIGHT_GRAY), createCell("C_req = (E × Autonomie) / (DOD × η_batt)", false, LIGHT_GRAY), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")
+  ]);
+  battData.push([
+    createCell("", true, LIGHT_GRAY), createCell("N_cellules = C_installée / C_unitaire", false, LIGHT_GRAY), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")
+  ]);
+  
   const wsBatt = XLSX.utils.aoa_to_sheet(battData);
   wsBatt['!cols'] = [
-    { wch: 8 }, { wch: 18 }, { wch: 18 }, { wch: 14 },
-    { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 14 },
+    { wch: 10 }, { wch: 20 }, { wch: 20 }, { wch: 16 },
+    { wch: 16 }, { wch: 18 }, { wch: 16 }, { wch: 18 },
   ];
-  wsBatt['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
+  wsBatt['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 7 } },
+    { s: { r: 5 + results.length, c: 0 }, e: { r: 5 + results.length, c: 7 } },
+    { s: { r: 7 + results.length, c: 0 }, e: { r: 7 + results.length, c: 0 } },
+    { s: { r: 8 + results.length, c: 0 }, e: { r: 8 + results.length, c: 0 } },
+  ];
   XLSX.utils.book_append_sheet(wb, wsBatt, "Batteries");
   
   // ═══════════════════════════════════════════════════════════════════════════
   // FEUILLE 4: TEMPS DE RECHARGE
   // ═══════════════════════════════════════════════════════════════════════════
-  const rechargeData: (string | number)[][] = [];
-  rechargeData.push(["TEMPS DE RECHARGE DES BATTERIES", "", "", "", ""]);
-  rechargeData.push(["", "", "", "", ""]);
+  const rechargeData: any[][] = [];
+  rechargeData.push([
+    createCell("TEMPS DE RECHARGE DES BATTERIES", true, ORANGE, WHITE),
+    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
+    createCell("", false, ORANGE), createCell("", false, ORANGE),
+  ]);
+  rechargeData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
   
-  results.forEach(r => {
-    rechargeData.push(["Site: " + r.siteId, "", "", "", ""]);
-    rechargeData.push(["PSH (h/j)", "E_pv_net (Wh/j)", "E_charge (Wh)", "Surplus (Wh/j)", "T_recharge (jours)"]);
+  results.forEach((r, rIdx) => {
+    const startRow = rechargeData.length;
+    rechargeData.push([createCell(`Site: ${r.siteId}`, true, ORANGE, WHITE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE)]);
+    
+    const rechHeaders = ["Scénario", "PSH (h/j)", "E_pv_net (Wh/j)", "E_charge (Wh)", "T_recharge (jours)"];
+    rechargeData.push(rechHeaders.map(h => createCell(h, true, LIGHT_GRAY)));
     
     const recharge = calculateRecharge(r);
-    recharge.scenarios.forEach(s => {
+    recharge.scenarios.forEach((s, idx) => {
+      const bg = idx % 2 === 0 ? null : LIGHT_GRAY;
       rechargeData.push([
-        s.sunHours,
-        Math.round(s.ePvJ),
-        Math.round(s.eLoadDuringPSH),
-        s.eRechargeJ > 0 ? "+" + Math.round(s.eRechargeJ) : Math.round(s.eRechargeJ),
-        s.daysToRecharge !== null ? s.daysToRecharge.toFixed(2) : "N/A",
+        createCell(`${s.sunHours} h/jour`, false, bg),
+        createCell(s.sunHours, false, bg),
+        createCell(Math.round(s.ePvJ), false, bg),
+        createCell(Math.round(s.eLoadDuringPSH), false, bg),
+        createCell(s.daysToRecharge !== null ? s.daysToRecharge.toFixed(2) : "N/A", true, bg, ORANGE),
       ]);
     });
-    rechargeData.push(["", "", "", "", ""]);
+    
+    rechargeData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
+    
+    // Merge site header
+    wsSummary['!merges'] = wsSummary['!merges'] || [];
   });
   
   const wsRecharge = XLSX.utils.aoa_to_sheet(rechargeData);
-  wsRecharge['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 18 }];
-  wsRecharge['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }];
+  wsRecharge['!cols'] = [{ wch: 18 }, { wch: 15 }, { wch: 18 }, { wch: 18 }, { wch: 20 }];
   XLSX.utils.book_append_sheet(wb, wsRecharge, "Temps Recharge");
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FEUILLE 5: PARAMÈTRES PAR SITE
+  // ═══════════════════════════════════════════════════════════════════════════
+  const siteData: any[][] = [];
+  siteData.push([
+    createCell("PARAMÈTRES D'ENTRÉE PAR SITE", true, ORANGE, WHITE),
+    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
+  ]);
+  siteData.push([createCell(""), createCell(""), createCell(""), createCell("")]);
+  
+  const siteHeaders = ["Paramètre", "BVS1", "BVS2", "TA"];
+  siteData.push(siteHeaders.map(h => createCell(h, true, LIGHT_GRAY)));
+  
+  const params = [
+    ["Énergie journalière (Wh/j)", "energyLoad"],
+    ["PSH (h/j)", "psh"],
+    ["PR", "pr"],
+    ["Puissance module (Wp)", "modulePower"],
+    ["Groupes", "groups"],
+    ["Autonomie (jours)", "autonomy"],
+    ["DOD", "dod"],
+    ["Rendement batterie", "batteryEfficiency"],
+    ["Tension système (V)", "systemVoltage"],
+    ["Capacité unitaire (Ah)", "unitaryBatteryCapacity"],
+    ["Marge (%)", "margin"],
+  ];
+  
+  params.forEach((row, idx) => {
+    const bg = idx % 2 === 0 ? null : LIGHT_GRAY;
+    siteData.push([
+      createCell(row[0], true, bg),
+      createCell(row[1] === "margin" ? ((results[0]?.params.margin || 0) * 100).toFixed(0) + "%" : 
+                row[1] === "dod" ? (results[0]?.params.dod || 0).toString() :
+                row[1] === "batteryEfficiency" ? ((results[0]?.params.batteryEfficiency || 0) * 100).toFixed(0) + "%" :
+                row[1] === "pr" ? (results[0]?.params.pr || 0).toString() :
+                String(results[0]?.params[row[1 as keyof typeof results[0]['params']] || ""), false, bg),
+      createCell(row[1] === "margin" ? ((results[1]?.params.margin || 0) * 100).toFixed(0) + "%" : 
+                row[1] === "dod" ? (results[1]?.params.dod || 0).toString() :
+                row[1] === "batteryEfficiency" ? ((results[1]?.params.batteryEfficiency || 0) * 100).toFixed(0) + "%" :
+                row[1] === "pr" ? (results[1]?.params.pr || 0).toString() :
+                String(results[1]?.params[row[1 as keyof typeof results[1]['params']] || ""), false, bg),
+      createCell(row[1] === "margin" ? ((results[2]?.params.margin || 0) * 100).toFixed(0) + "%" : 
+                row[1] === "dod" ? (results[2]?.params.dod || 0).toString() :
+                row[1] === "batteryEfficiency" ? ((results[2]?.params.batteryEfficiency || 0) * 100).toFixed(0) + "%" :
+                row[1] === "pr" ? (results[2]?.params.pr || 0).toString() :
+                String(results[2]?.params[row[1 as keyof typeof results[2]['params']] || ""), false, bg),
+    ]);
+  });
+  
+  const wsSite = XLSX.utils.aoa_to_sheet(siteData);
+  wsSite['!cols'] = [{ wch: 28 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+  wsSite['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 3 } },
+  ];
+  XLSX.utils.book_append_sheet(wb, wsSite, "Paramètres");
   
   // ═══════════════════════════════════════════════════════════════════════════
   // SAUVEGARDE

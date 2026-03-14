@@ -46,10 +46,10 @@ const features = [
   "Générer des rapports de dimensionnement professionnels avec les tableaux de calcul complets, les formules et les résultats des trois sites."
 },
 {
-  icon: ShieldCheck,
-  title: "Export Excel",
+  icon: FolderOpen,
+  title: "Enregistrer Localement",
   description:
-  "Enregistrez vos projets localement et exportez les résultats complets en Excel pour vos rapports et présentations professionnelles."
+  "Sauvegardez vos projets et calculs localement sur votre appareil et reprenez vos sessions à tout moment avec toutes les données enregistrées."
 }];
 
 
