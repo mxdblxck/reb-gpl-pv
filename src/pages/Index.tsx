@@ -256,7 +256,7 @@ export default function Index() {
           className="flex justify-center"
         >
           <img 
-            src="/icon/home-pv.svg" 
+            src="/icon/home-pv.png" 
             alt="Solar PV System" 
             className="h-40 sm:h-56 md:h-72 w-auto object-contain"
           />
