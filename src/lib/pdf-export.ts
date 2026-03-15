@@ -423,9 +423,9 @@ export function generateExcel(results: SiteResult[], projectName?: string): void
   const WHITE = { r: 255, g: 255, b: 255 };
   const DARK = { r: 30, g: 20, b: 10 };
   const LIGHT_GRAY = { r: 243, g: 244, b: 246 };
-  
   // Helper for styled cell
-  const sc = (v: any, bold = false, bg: any = null, fc: any = DARK) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sc = (v: any, bold: any = false, bg: any = null, fc: any = DARK) => ({
     v,
     s: {
       font: { bold, color: { rgb: fc === DARK ? '1E1414' : 'FFFFFF' } },
@@ -570,11 +570,12 @@ export function generateExcel(results: SiteResult[], projectName?: string): void
   
   paramRows.forEach((row, i) => {
     const bg = i % 2 === 0 ? null : LIGHT_GRAY;
+    const key = row[1] as keyof typeof results[0]['params'];
     r6.push([
       sc(row[0], true, bg),
-      sc(results[0] ? String(results[0].params[row[1] as keyof typeof results[0]['params'] || "") : "-", false, bg),
-      sc(results[1] ? String(results[1].params[row[1] as keyof typeof results[1]['params'] || "") : "-", false, bg),
-      sc(results[2] ? String(results[2].params[row[1] as keyof typeof results[2]['params'] || "") : "-", false, bg),
+      sc(results[0] ? String(results[0].params[key] ?? "-") : "-", false, bg),
+      sc(results[1] ? String(results[1].params[key] ?? "-") : "-", false, bg),
+      sc(results[2] ? String(results[2].params[key] ?? "-") : "-", false, bg),
     ]);
   });
   
