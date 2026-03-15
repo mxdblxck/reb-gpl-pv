@@ -87,19 +87,22 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
   const dod = results[0]?.params.dod ?? 0.8;
   const batteryEff = results[0]?.params.batteryEfficiency ?? 0.85;
   const unitaryCap = results[0]?.params.unitaryBatteryCapacity ?? 1275;
+  
+  // Dynamic PSH label - show (pire mois) for low values, (moyenne) for higher values
+  const pshLabel = psh <= 5.0 ? "(pire mois)" : "(moyenne)";
 
   const basis = [
     ["Emplacement", "Rhourde El Baguel, Algérie (Désert du Sahara)"],
-    ["Heures de Soleil Crête (PSH)", `${psh} h/jour (pire mois)`],
+    ["Heures de Soleil Crête (PSH)", `${psh} h/jour ${pshLabel}`],
     ["Ratio de Performance (PR)", `${pr} (valeur conservative, pertes câblage/température)`],
     ["Module PV", `${modulePower} Wp — Jinko Solar (mono-PERC)`],
     ["Tension Système", `${systemVoltage} V DC`],
-    ["Technologie Batterie", "Ni-Cad (Nickel-Cadmium), 1,2 V/celule"],
+    ["Technologie Batterie", "Ni-Cad (Nickel-Cadmium), 1,2 V/cellule"],
     ["Autonomie Batterie", `${autonomy} jours`],
     ["Profondeur de Décharge (DOD)", `${dod * 100}%`],
     ["Rendement Batterie", `${batteryEff * 100}%`],
     ["Capacité Unitaire Batterie", `${unitaryCap} Ah`],
-    ["Référence Normative", "UTE C15-712-2 (Norme solaire française/algérienne)"],
+    ["Référence Normative", "IEC 61215, IEC 62259, IEEE 1115 et UTE C15-712-2"],
   ];
 
   autoTable(doc, {
@@ -229,7 +232,7 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
         ["Énergie Requise", formatWh(battery.capacityWh), `A ${params.systemVoltage} V nominal`],
         ["Capacité Installée", formatAh(battery.actualCapacityAh), `${battery.parallelBranches} branche(s) * ${params.unitaryBatteryCapacity} Ah`],
         ["Énergie Installée", formatWh(battery.actualCapacityWh), "Nominale à la tension système"],
-        ["Cellules en Série", `${battery.cellsInSeries} cellules`, `${params.systemVoltage}V / ${params.cellVoltage}V/celule`],
+        ["Cellules en Série", `${battery.cellsInSeries} cellules`, `${params.systemVoltage}V / ${params.cellVoltage}V/cellule`],
         ["Branches Parallèles", `${battery.parallelBranches}`, `ceil(${battery.capacityAh.toFixed(0)} / ${params.unitaryBatteryCapacity})`],
         ["Configuration", battery.configLabel, "Série * Parallèle (Ni-Cad)"],
         ["Total Cellules", `${battery.totalCells}`, `${battery.cellsInSeries}S * ${battery.parallelBranches}P`],
@@ -382,6 +385,27 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
     );
   }
 
+  // Add logo at the end - last page
+  try {
+    const logoPath = "public/icon/REB LIGNE GPL.svg";
+    doc.addPage();
+    const lastPageH = doc.internal.pageSize.getHeight();
+    doc.setFillColor(...BRAND_ORANGE);
+    doc.rect(0, lastPageH - 50, pageW, 50, "F");
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("SONATRACH", margin, lastPageH - 30);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("Direction Centrale - Engineering & Project Management", margin, lastPageH - 22);
+    doc.text("Projet ligne d'expédition GPL 14\" - RHOURDE EL BAGUEL", margin, lastPageH - 14);
+  } catch (e) {
+    console.log("Logo not added:", e);
+  }
+
   // Nom du fichier avec date
   const fileName = projectName 
     ? `REB-GPL-PV-${projectName.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().slice(0, 10)}.pdf`
@@ -390,343 +414,178 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
   doc.save(fileName);
 }
 
-// Excel Export function - Beautiful and organized with site colors
+// Excel Export function - Professional layout with brand colors
 export function generateExcel(results: SiteResult[], projectName?: string): void {
   const wb = XLSX.utils.book_new();
   
-  // Helper: Convert hex to RGB
-  const hexToRgb = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : { r: 0, g: 0, b: 0 };
-  };
-  
-  const ORANGE = hexToRgb('#FF6600');
-  const DARK = hexToRgb('#1E1414');
-  const LIGHT = hexToRgb('#FFF7ED');
+  // Brand colors
+  const ORANGE = { r: 255, g: 102, b: 0 };
   const WHITE = { r: 255, g: 255, b: 255 };
-  const GRAY = hexToRgb('#6B7280');
-  const LIGHT_GRAY = hexToRgb('#F3F4F6');
+  const DARK = { r: 30, g: 20, b: 10 };
+  const LIGHT_GRAY = { r: 243, g: 244, b: 246 };
   
-  // Helper to create styled cell
-  const createCell = (value: any, bold = false, bgColor: typeof ORANGE | null = null, fontColor: typeof ORANGE = DARK): any => ({
-    v: value,
+  // Helper for styled cell
+  const sc = (v: any, bold = false, bg: any = null, fc: any = DARK) => ({
+    v,
     s: {
-      font: { bold, color: { rgb: fontColor === DARK ? '1E1414' : 'FFFFFF' } },
-      fill: bgColor ? { fgColor: { rgb: bgColor === ORANGE ? 'FF6600' : 'F3F4F6' } } : undefined,
-      alignment: { horizontal: 'center', vertical: 'center' },
-      border: {
-        left: { style: 'thin', color: { rgb: 'E5E7EB' } },
-        right: { style: 'thin', color: { rgb: 'E5E7EB' } },
-        top: { style: 'thin', color: { rgb: 'E5E7EB' } },
-        bottom: { style: 'thin', color: { rgb: 'E5E7EB' } },
-      },
+      font: { bold, color: { rgb: fc === DARK ? '1E1414' : 'FFFFFF' } },
+      fill: bg ? { fgColor: { rgb: bg === ORANGE ? 'FF6600' : 'F3F4F6' } } : undefined,
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: { left: { style: 'thin', color: { rgb: 'E5E7EB' } }, right: { style: 'thin', color: { rgb: 'E5E7EB' } }, top: { style: 'thin', color: { rgb: 'E5E7EB' } }, bottom: { style: 'thin', color: { rgb: 'E5E7EB' } } },
     },
   });
   
-  // ═══════════════════════════════════════════════════════════════════════════
-  // FEUILLE 1: RÉSUMÉ DU PROJET
-  // ═══════════════════════════════════════════════════════════════════════════
-  const summaryData: any[][] = [];
+  // ═══ FEUILLE 1: RÉSUMÉ ═══
+  const r1: any[][] = [];
+  r1.push([sc("SONATRACH", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r1.push([sc("Projet: REB GPL LIGNE - Rhourde El Baguel", true), sc(""), sc(""), sc(""), sc("")]);
+  r1.push([sc(`Date: ${new Date().toLocaleDateString('fr-FR')}`, false), sc(""), sc(""), sc(""), sc("")]);
+  r1.push([sc(""), sc(""), sc(""), sc(""), sc("")]);
+  r1.push([sc("RÉSUMÉ DU DIMENSIONNEMENT", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r1.push([sc(""), sc(""), sc(""), sc(""), sc("")]);
   
-  // En-tête projet - Title row
-  summaryData.push([
-    createCell("SONATRACH - REB GPL LIGNE", true, ORANGE, WHITE),
-    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
-    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
-  ]);
+  // Table header
+  r1.push([sc("Site", true, LIGHT_GRAY), sc("Énergie (Wh/j)", true, LIGHT_GRAY), sc("Puissance PV (kWp)", true, LIGHT_GRAY), sc("Modules", true, LIGHT_GRAY), sc("Capacité Batt (Ah)", true, LIGHT_GRAY)]);
   
-  // Project name
-  summaryData.push([
-    createCell(`Projet: ${projectName || "Dimensionnement PV"}`, true),
-    createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""),
-  ]);
-  
-  // Date
-  summaryData.push([
-    createCell(`Date: ${new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}`),
-    createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""),
-  ]);
-  
-  summaryData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
-  
-  // En-têtes tableau avec fond orange
-  const headers = ["Site", "Énergie (Wh/j)", "Puissance PV (kWp)", "Modules", "Config PV", "Capacité Batt (Ah)", "Config Batt"];
-  summaryData.push(headers.map(h => createCell(h, true, LIGHT_GRAY)));
-  
-  // Données avec alternance
-  results.forEach((r, idx) => {
-    const bg = idx % 2 === 0 ? null : LIGHT_GRAY;
-    summaryData.push([
-      createCell(r.siteId, true, bg ? bg : null, ORANGE),
-      createCell(Math.round(r.correctedEnergyLoad), false, bg),
-      createCell((r.pv.actualPvPower / 1000).toFixed(2), false, bg),
-      createCell(r.pv.totalModules, false, bg),
-      createCell(r.pv.configLabel, false, bg),
-      createCell(Math.round(r.battery.actualCapacityAh), false, bg),
-      createCell(r.battery.configLabel, false, bg),
-    ]);
+  // Data rows
+  results.forEach((r, i) => {
+    const bg = i % 2 === 0 ? null : LIGHT_GRAY;
+    r1.push([sc(r.siteId, true, bg, ORANGE), sc(Math.round(r.correctedEnergyLoad), false, bg), sc((r.pv.actualPvPower / 1000).toFixed(2), false, bg), sc(r.pv.totalModules, false, bg), sc(Math.round(r.battery.actualCapacityAh), false, bg)]);
   });
   
-  summaryData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
-  summaryData.push([createCell("PARAMÈTRES DE CALCUL", true, ORANGE, WHITE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE)]);
+  r1.push([sc(""), sc(""), sc(""), sc(""), sc("")]);
   
+  // Parameters
+  r1.push([sc("PARAMÈTRES", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
   if (results[0]) {
     const p = results[0].params;
-    const paramsData = [
-      ["PSH (pire mois)", `${p.psh} h/jour`],
-      ["PR (Performance Ratio)", p.pr.toString()],
-      ["Tension système", `${p.systemVoltage} V DC`],
-      ["Autonomie", `${p.autonomy} jours`],
-      ["DOD", `${(p.dod * 100).toFixed(0)}%`],
-      ["Rendement batteries", `${(p.batteryEfficiency * 100).toFixed(0)}%`],
-      ["Capacité unitaire", `${p.unitaryBatteryCapacity} Ah`],
-      ["Marge de sécurité", `${((p.margin || 0) * 100).toFixed(0)}%`],
-    ];
-    paramsData.forEach((row, idx) => {
-      summaryData.push([
-        createCell(row[0], true, idx % 2 === 0 ? null : LIGHT_GRAY),
-        createCell(row[1], false, idx % 2 === 0 ? null : LIGHT_GRAY),
-        createCell(""), createCell(""), createCell(""), createCell(""), createCell(""),
-      ]);
-    });
+    r1.push([sc("PSH", true), sc(`${p.psh} h/jour`), sc(""), sc(""), sc("")]);
+    r1.push([sc("PR", true), sc(p.pr.toString()), sc(""), sc(""), sc("")]);
+    r1.push([sc("Autonomie", true), sc(`${p.autonomy} jours`), sc(""), sc(""), sc("")]);
+    r1.push([sc("DOD", true), sc(`${(p.dod * 100).toFixed(0)}%`), sc(""), sc(""), sc("")]);
+    r1.push([sc("Tension", true), sc(`${p.systemVoltage}V DC`), sc(""), sc(""), sc("")]);
   }
   
-  const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+  const ws1 = XLSX.utils.aoa_to_sheet(r1);
+  ws1['!cols'] = [{ wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 18 }];
+  ws1['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 4 } }, { s: { r: 4, c: 0 }, e: { r: 4, c: 4 } }, { s: { r: 10, c: 0 }, e: { r: 10, c: 4 } }];
+  XLSX.utils.book_append_sheet(wb, ws1, "Résumé");
   
-  // Set column widths
-  wsSummary['!cols'] = [
-    { wch: 10 },  // Site
-    { wch: 18 }, // Energie
-    { wch: 18 }, // Puissance PV
-    { wch: 10 }, // Modules
-    { wch: 16 }, // Config PV
-    { wch: 18 }, // Capacité Batt
-    { wch: 16 }, // Config Batt
-  ];
+  // ═══ FEUILLE 2: SYSTÈME PV ═══
+  const r2: any[][] = [];
+  r2.push([sc("DÉTAIL SYSTÈME PHOTOVOLTAÏQUE", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r2.push([sc(""), sc(""), sc(""), sc(""), sc(""), sc("")]);
+  r2.push([sc("Site", true, LIGHT_GRAY), sc("P_req (Wp)", true, LIGHT_GRAY), sc("P_inst (Wp)", true, LIGHT_GRAY), sc("Modules", true, LIGHT_GRAY), sc("Série", true, LIGHT_GRAY), sc("Parallèle", true, LIGHT_GRAY)]);
   
-  // Merge cells for header
-  wsSummary['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // SONATRACH title
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // Project name
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } }, // Date
-    { s: { r: 5, c: 0 }, e: { r: 5, c: 6 } }, // Headers
-    { s: { r: 7, c: 0 }, e: { r: 7, c: 6 } }, // Params title
-  ];
-  
-  XLSX.utils.book_append_sheet(wb, wsSummary, "Résumé");
-  
-  // ═══════════════════════════════════════════════════════════════════════════
-  // FEUILLE 2: DÉTAIL SYSTÈME PV
-  // ═══════════════════════════════════════════════════════════════════════════
-  const pvData: any[][] = [];
-  pvData.push([
-    createCell("DÉTAIL SYSTÈME PHOTOVOLTAÏQUE", true, ORANGE, WHITE),
-    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
-    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
-  ]);
-  pvData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
-  
-  const pvHeaders = ["Site", "Puissance Requise (Wp)", "Puissance Installée (Wp)", "Modules Total", "Modules/Groupe", "Groupes", "Série/String", "Strings/Groupe"];
-  pvData.push(pvHeaders.map(h => createCell(h, true, LIGHT_GRAY)));
-  
-  results.forEach((r, idx) => {
-    const bg = idx % 2 === 0 ? null : LIGHT_GRAY;
-    pvData.push([
-      createCell(r.siteId, true, bg ? bg : null, ORANGE),
-      createCell(Math.round(r.pv.pvRequiredWp), false, bg),
-      createCell(Math.round(r.pv.actualPvPower), false, bg),
-      createCell(r.pv.totalModules, false, bg),
-      createCell(r.pv.nModulesPerGroup, false, bg),
-      createCell(r.params.groups, false, bg),
-      createCell(r.pv.seriesPerGroup, false, bg),
-      createCell(r.pv.parallelStrings, false, bg),
-    ]);
+  results.forEach((r, i) => {
+    const bg = i % 2 === 0 ? null : LIGHT_GRAY;
+    r2.push([sc(r.siteId, true, bg, ORANGE), sc(Math.round(r.pv.pvRequiredWp), false, bg), sc(Math.round(r.pv.actualPvPower), false, bg), sc(r.pv.totalModules, false, bg), sc(r.pv.seriesPerGroup, false, bg), sc(r.pv.parallelStrings, false, bg)]);
   });
   
-  // Add formulas explanation
-  pvData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
-  pvData.push([createCell("FORMULES UTILISÉES", true, ORANGE, WHITE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE)]);
-  pvData.push([
-    createCell("Formule", true, LIGHT_GRAY), createCell("E = Energie journalière (Wh/j)", false, LIGHT_GRAY), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")
-  ]);
-  pvData.push([
-    createCell("", true, LIGHT_GRAY), createCell("P_pv = E / (PSH × PR)", false, LIGHT_GRAY), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")
-  ]);
-  pvData.push([
-    createCell("", true, LIGHT_GRAY), createCell("N_modules = P_pv / P_module", false, LIGHT_GRAY), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")
-  ]);
+  const ws2 = XLSX.utils.aoa_to_sheet(r2);
+  ws2['!cols'] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
+  ws2['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }];
+  XLSX.utils.book_append_sheet(wb, ws2, "Système PV");
   
-  const wsPV = XLSX.utils.aoa_to_sheet(pvData);
-  wsPV['!cols'] = [
-    { wch: 10 }, { wch: 20 }, { wch: 20 }, { wch: 14 },
-    { wch: 16 }, { wch: 10 }, { wch: 14 }, { wch: 16 },
-  ];
-  wsPV['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 7 } },
-    { s: { r: 5 + results.length, c: 0 }, e: { r: 5 + results.length, c: 7 } },
-    { s: { r: 7 + results.length, c: 0 }, e: { r: 7 + results.length, c: 0 } },
-    { s: { r: 8 + results.length, c: 0 }, e: { r: 8 + results.length, c: 0 } },
-    { s: { r: 9 + results.length, c: 0 }, e: { r: 9 + results.length, c: 0 } },
-  ];
-  XLSX.utils.book_append_sheet(wb, wsPV, "Système PV");
+  // ═══ FEUILLE 3: BATTERIES ═══
+  const r3: any[][] = [];
+  r3.push([sc("DÉTAIL PARC BATTERIES", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r3.push([sc(""), sc(""), sc(""), sc(""), sc(""), sc(""), sc("")]);
+  r3.push([sc("Site", true, LIGHT_GRAY), sc("Capacité (Ah)", true, LIGHT_GRAY), sc("Énergie (Wh)", true, LIGHT_GRAY), sc("Cellules Série", true, LIGHT_GRAY), sc("Branches", true, LIGHT_GRAY), sc("Total", true, LIGHT_GRAY), sc("Config", true, LIGHT_GRAY)]);
   
-  // ═══════════════════════════════════════════════════════════════════════════
-  // FEUILLE 3: DÉTAIL BATTERIES
-  // ═══════════════════════════════════════════════════════════════════════════
-  const battData: any[][] = [];
-  battData.push([
-    createCell("DÉTAIL PARC BATTERIES", true, ORANGE, WHITE),
-    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
-    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
-  ]);
-  battData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
-  
-  const battHeaders = ["Site", "Capacité Requise (Ah)", "Capacité Installée (Ah)", "Énergie (Wh)", "Cellules Série", "Branches Parall", "Total Cellules", "Configuration"];
-  battData.push(battHeaders.map(h => createCell(h, true, LIGHT_GRAY)));
-  
-  results.forEach((r, idx) => {
-    const bg = idx % 2 === 0 ? null : LIGHT_GRAY;
-    battData.push([
-      createCell(r.siteId, true, bg ? bg : null, ORANGE),
-      createCell(Math.round(r.battery.capacityAh), false, bg),
-      createCell(Math.round(r.battery.actualCapacityAh), false, bg),
-      createCell(Math.round(r.battery.actualCapacityWh), false, bg),
-      createCell(r.battery.cellsInSeries, false, bg),
-      createCell(r.battery.parallelBranches, false, bg),
-      createCell(r.battery.totalCells, false, bg),
-      createCell(r.battery.configLabel, false, bg),
-    ]);
+  results.forEach((r, i) => {
+    const bg = i % 2 === 0 ? null : LIGHT_GRAY;
+    r3.push([sc(r.siteId, true, bg, ORANGE), sc(Math.round(r.battery.actualCapacityAh), false, bg), sc(Math.round(r.battery.actualCapacityWh), false, bg), sc(r.battery.cellsInSeries, false, bg), sc(r.battery.parallelBranches, false, bg), sc(r.battery.totalCells, false, bg), sc(r.battery.configLabel, false, bg)]);
   });
   
-  // Add formulas
-  battData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
-  battData.push([createCell("FORMULES UTILISÉES", true, ORANGE, WHITE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE)]);
-  battData.push([
-    createCell("Formule", true, LIGHT_GRAY), createCell("C_req = (E × Autonomie) / (DOD × η_batt)", false, LIGHT_GRAY), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")
-  ]);
-  battData.push([
-    createCell("", true, LIGHT_GRAY), createCell("N_cellules = C_installée / C_unitaire", false, LIGHT_GRAY), createCell(""), createCell(""), createCell(""), createCell(""), createCell(""), createCell("")
-  ]);
+  const ws3 = XLSX.utils.aoa_to_sheet(r3);
+  ws3['!cols'] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 20 }];
+  ws3['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }];
+  XLSX.utils.book_append_sheet(wb, ws3, "Batteries");
   
-  const wsBatt = XLSX.utils.aoa_to_sheet(battData);
-  wsBatt['!cols'] = [
-    { wch: 10 }, { wch: 20 }, { wch: 20 }, { wch: 16 },
-    { wch: 16 }, { wch: 18 }, { wch: 16 }, { wch: 18 },
-  ];
-  wsBatt['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 7 } },
-    { s: { r: 5 + results.length, c: 0 }, e: { r: 5 + results.length, c: 7 } },
-    { s: { r: 7 + results.length, c: 0 }, e: { r: 7 + results.length, c: 0 } },
-    { s: { r: 8 + results.length, c: 0 }, e: { r: 8 + results.length, c: 0 } },
-  ];
-  XLSX.utils.book_append_sheet(wb, wsBatt, "Batteries");
+  // ═══ FEUILLE 4: BILAN DE PUISSANCE ═══
+  const r4: any[][] = [];
+  r4.push([sc("BILAN DE PUISSANCE", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r4.push([sc(""), sc(""), sc(""), sc(""), sc("")]);
   
-  // ═══════════════════════════════════════════════════════════════════════════
-  // FEUILLE 4: TEMPS DE RECHARGE
-  // ═══════════════════════════════════════════════════════════════════════════
-  const rechargeData: any[][] = [];
-  rechargeData.push([
-    createCell("TEMPS DE RECHARGE DES BATTERIES", true, ORANGE, WHITE),
-    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
-    createCell("", false, ORANGE), createCell("", false, ORANGE),
-  ]);
-  rechargeData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
-  
-  results.forEach((r, rIdx) => {
-    const startRow = rechargeData.length;
-    rechargeData.push([createCell(`Site: ${r.siteId}`, true, ORANGE, WHITE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE), createCell("", true, ORANGE)]);
+  results.forEach((r) => {
+    const pLoad = r.correctedEnergyLoad;
+    const pLoadAvg = pLoad / 24;
+    const pPvNet = r.pv.actualPvPower * r.params.pr;
+    const daysToFull = r.battery.actualCapacityWh / pLoad;
     
-    const rechHeaders = ["Scénario", "PSH (h/j)", "E_pv_net (Wh/j)", "E_charge (Wh)", "T_recharge (jours)"];
-    rechargeData.push(rechHeaders.map(h => createCell(h, true, LIGHT_GRAY)));
+    r4.push([sc(`Site: ${r.siteId}`, true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+    r4.push([sc("Paramètre", true, LIGHT_GRAY), sc("Symbole", true, LIGHT_GRAY), sc("Valeur", true, LIGHT_GRAY), sc("Unité", true, LIGHT_GRAY), sc("Formule", true, LIGHT_GRAY)]);
+    r4.push([sc("Énergie journalière", false, null), sc("E"), sc(Math.round(pLoad)), sc("Wh/j"), sc("")]);
+    r4.push([sc("Puissance moyenne", false, null), sc("P_moy"), sc(pLoadAvg.toFixed(1)), sc("W"), sc("E / 24")]);
+    r4.push([sc("Puissance PV installée", false, null), sc("P_pv"), sc(Math.round(r.pv.actualPvPower)), sc("Wp"), sc("")]);
+    r4.push([sc("Puissance PV nette", false, null), sc("P_pv_net"), sc(Math.round(pPvNet)), sc("W"), sc("P_inst × PR")]);
+    r4.push([sc("Capacité batterie", false, null), sc("C_batt"), sc(Math.round(r.battery.actualCapacityWh)), sc("Wh"), sc("")]);
+    r4.push([sc("Jours autonomie", false, null), sc("N_jours"), sc(daysToFull.toFixed(1)), sc("jours"), sc("C / P_moy")]);
+    r4.push([sc(""), sc(""), sc(""), sc(""), sc("")]);
+  });
+  
+  const ws4 = XLSX.utils.aoa_to_sheet(r4);
+  ws4['!cols'] = [{ wch: 22 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 20 }];
+  XLSX.utils.book_append_sheet(wb, ws4, "Bilan Puissance");
+  
+  // ═══ FEUILLE 5: TEMPS DE RECHARGE ═══
+  const r5: any[][] = [];
+  r5.push([sc("TEMPS DE RECHARGE DES BATTERIES", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r5.push([sc(""), sc(""), sc(""), sc(""), sc("")]);
+  
+  results.forEach((r) => {
+    r5.push([sc(`Site: ${r.siteId}`, true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+    r5.push([sc("PSH (h/j)", true, LIGHT_GRAY), sc("E_pv (Wh/j)", true, LIGHT_GRAY), sc("Echarge (Wh)", true, LIGHT_GRAY), sc("Surplus", true, LIGHT_GRAY), sc("Jours", true, LIGHT_GRAY)]);
     
-    const recharge = calculateRecharge(r);
-    recharge.scenarios.forEach((s, idx) => {
-      const bg = idx % 2 === 0 ? null : LIGHT_GRAY;
-      rechargeData.push([
-        createCell(`${s.sunHours} h/jour`, false, bg),
-        createCell(s.sunHours, false, bg),
-        createCell(Math.round(s.ePvJ), false, bg),
-        createCell(Math.round(s.eLoadDuringPSH), false, bg),
-        createCell(s.daysToRecharge !== null ? s.daysToRecharge.toFixed(2) : "N/A", true, bg, ORANGE),
-      ]);
+    const rech = calculateRecharge(r);
+    rech.scenarios.forEach((s, i) => {
+      const bg = i % 2 === 0 ? null : LIGHT_GRAY;
+      r5.push([sc(s.sunHours, false, bg), sc(Math.round(s.ePvJ), false, bg), sc(Math.round(s.eLoadDuringPSH), false, bg), sc(s.eRechargeJ > 0 ? "+" + Math.round(s.eRechargeJ) : Math.round(s.eRechargeJ), false, bg), sc(s.daysToRecharge?.toFixed(2) || "N/A", true, bg, ORANGE)]);
     });
-    
-    rechargeData.push([createCell(""), createCell(""), createCell(""), createCell(""), createCell("")]);
-    
-    // Merge site header
-    wsSummary['!merges'] = wsSummary['!merges'] || [];
+    r5.push([sc(""), sc(""), sc(""), sc(""), sc("")]);
   });
   
-  const wsRecharge = XLSX.utils.aoa_to_sheet(rechargeData);
-  wsRecharge['!cols'] = [{ wch: 18 }, { wch: 15 }, { wch: 18 }, { wch: 18 }, { wch: 20 }];
-  XLSX.utils.book_append_sheet(wb, wsRecharge, "Temps Recharge");
+  const ws5 = XLSX.utils.aoa_to_sheet(r5);
+  ws5['!cols'] = [{ wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 15 }];
+  XLSX.utils.book_append_sheet(wb, ws5, "Temps Recharge");
   
-  // ═══════════════════════════════════════════════════════════════════════════
-  // FEUILLE 5: PARAMÈTRES PAR SITE
-  // ═══════════════════════════════════════════════════════════════════════════
-  const siteData: any[][] = [];
-  siteData.push([
-    createCell("PARAMÈTRES D'ENTRÉE PAR SITE", true, ORANGE, WHITE),
-    createCell("", false, ORANGE), createCell("", false, ORANGE), createCell("", false, ORANGE),
-  ]);
-  siteData.push([createCell(""), createCell(""), createCell(""), createCell("")]);
+  // ═══ FEUILLE 6: PARAMÈTRES ═══
+  const r6: any[][] = [];
+  r6.push([sc("PARAMÈTRES D'ENTRÉE", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r6.push([sc(""), sc(""), sc(""), sc("")]);
+  r6.push([sc("Paramètre", true, LIGHT_GRAY), sc("BVS1", true, LIGHT_GRAY), sc("BVS2", true, LIGHT_GRAY), sc("TA", true, LIGHT_GRAY)]);
   
-  const siteHeaders = ["Paramètre", "BVS1", "BVS2", "TA"];
-  siteData.push(siteHeaders.map(h => createCell(h, true, LIGHT_GRAY)));
-  
-  const params = [
-    ["Énergie journalière (Wh/j)", "energyLoad"],
+  const paramRows = [
+    ["Énergie (Wh/j)", "energyLoad"],
     ["PSH (h/j)", "psh"],
     ["PR", "pr"],
-    ["Puissance module (Wp)", "modulePower"],
+    ["Module (Wp)", "modulePower"],
     ["Groupes", "groups"],
     ["Autonomie (jours)", "autonomy"],
     ["DOD", "dod"],
-    ["Rendement batterie", "batteryEfficiency"],
-    ["Tension système (V)", "systemVoltage"],
-    ["Capacité unitaire (Ah)", "unitaryBatteryCapacity"],
-    ["Marge (%)", "margin"],
+    ["Tension (V)", "systemVoltage"],
+    ["Capacité (Ah)", "unitaryBatteryCapacity"],
   ];
   
-  params.forEach((row, idx) => {
-    const bg = idx % 2 === 0 ? null : LIGHT_GRAY;
-    siteData.push([
-      createCell(row[0], true, bg),
-      createCell(row[1] === "margin" ? ((results[0]?.params.margin || 0) * 100).toFixed(0) + "%" : 
-                row[1] === "dod" ? (results[0]?.params.dod || 0).toString() :
-                row[1] === "batteryEfficiency" ? ((results[0]?.params.batteryEfficiency || 0) * 100).toFixed(0) + "%" :
-                row[1] === "pr" ? (results[0]?.params.pr || 0).toString() : "-", false, bg),
-      createCell(row[1] === "margin" ? ((results[1]?.params.margin || 0) * 100).toFixed(0) + "%" : 
-                row[1] === "dod" ? (results[1]?.params.dod || 0).toString() :
-                row[1] === "batteryEfficiency" ? ((results[1]?.params.batteryEfficiency || 0) * 100).toFixed(0) + "%" :
-                row[1] === "pr" ? (results[1]?.params.pr || 0).toString() : "-", false, bg),
-      createCell(row[1] === "margin" ? ((results[2]?.params.margin || 0) * 100).toFixed(0) + "%" : 
-                row[1] === "dod" ? (results[2]?.params.dod || 0).toString() :
-                row[1] === "batteryEfficiency" ? ((results[2]?.params.batteryEfficiency || 0) * 100).toFixed(0) + "%" :
-                row[1] === "pr" ? (results[2]?.params.pr || 0).toString() : "-", false, bg),
+  paramRows.forEach((row, i) => {
+    const bg = i % 2 === 0 ? null : LIGHT_GRAY;
+    r6.push([
+      sc(row[0], true, bg),
+      sc(results[0] ? String(results[0].params[row[1] as keyof typeof results[0]['params'] || "") : "-", false, bg),
+      sc(results[1] ? String(results[1].params[row[1] as keyof typeof results[1]['params'] || "") : "-", false, bg),
+      sc(results[2] ? String(results[2].params[row[1] as keyof typeof results[2]['params'] || "") : "-", false, bg),
     ]);
   });
   
-  const wsSite = XLSX.utils.aoa_to_sheet(siteData);
-  wsSite['!cols'] = [{ wch: 28 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
-  wsSite['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 3 } },
-  ];
-  XLSX.utils.book_append_sheet(wb, wsSite, "Paramètres");
+  const ws6 = XLSX.utils.aoa_to_sheet(r6);
+  ws6['!cols'] = [{ wch: 22 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+  ws6['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
+  XLSX.utils.book_append_sheet(wb, ws6, "Paramètres");
   
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SAUVEGARDE
-  // ═══════════════════════════════════════════════════════════════════════════
+  // Save
   const fileName = projectName 
     ? `REB-GPL-PV-${projectName.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().slice(0, 10)}.xlsx`
     : `REB-GPL-PV-Dimensionnement-${new Date().toISOString().slice(0, 10)}.xlsx`;
-    
   XLSX.writeFile(wb, fileName);
 }
