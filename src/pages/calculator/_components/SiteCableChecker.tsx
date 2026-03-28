@@ -52,38 +52,46 @@ function calcEps(L: number, I: number, U: number, S: number): number {
 
 /**
  * Sélection de la section suggérée :
- * 1. Prendre la section commerciale immédiatement supérieure à S_calc
- * 2. Si Iz < 1.25×Isc → passer à la suivante (une seule fois)
- * STOP : ne monte jamais au-delà de ce qui est nécessaire
+ * 1. Prendre la plus petite section commerciale >= S_min (calculée avec formule exacte)
+ * 2. Vérifier Iz >= 1.25×Isc - si pas OK, passer à la section suivante
+ * 3. Recommencher jusqu'à ce que les deux conditions soient satisfaites
  */
 function pickSugg(sCalc: number, iSc: number): Sec {
   const izReq = 1.25 * iSc;
+  
   // Première section >= S_calc
   const baseIdx = SECS.findIndex((s) => s >= sCalc);
   const start = baseIdx === -1 ? SECS.length - 1 : baseIdx;
 
+  // Chercher la première section qui satisfies les deux conditions
   for (let i = start; i < SECS.length; i++) {
-    if ((IZ[SECS[i]] ?? 0) >= izReq) return SECS[i];
+    const s = SECS[i];
+    const iz = IZ[s] ?? 0;
+    if (iz >= izReq) return s;
   }
+  
+  // Si aucune ne satisfy, retourner la plus grande
   return SECS[SECS.length - 1];
 }
 
 /**
- * Cascade S1+S2 : si ε_S1 + ε_S2 > 3%, monter S2 d'un cran commercial
- * Retourne la section S2 finale après cascade
+ * Cascade S1+S2 : si ε_S1 + ε_S2 > 3%, augmenter S1 d'un cran à chaque itération
+ * jusqu'à ce que la somme des chutes <= 3%
  */
 function cascadeS2(
-  l1: number, i1: number, u1: number, s1: Sec,
-  l2: number, i2: number, u2: number, s2Init: Sec,
+  l1: number, i1: number, u1: number, s1Init: Sec,
+  l2: number, i2: number, u2: number, s2: Sec,
 ): Sec {
-  let s2 = s2Init;
-  for (let i = SECS.indexOf(s2Init); i < SECS.length; i++) {
-    s2 = SECS[i];
+  let s1 = s1Init;
+  const startIdx = SECS.indexOf(s1Init);
+  
+  for (let i = startIdx; i < SECS.length; i++) {
+    s1 = SECS[i];
     const eps1 = calcEps(l1, i1, u1, s1);
     const eps2 = calcEps(l2, i2, u2, s2);
     if (eps1 + eps2 <= 3) break;
   }
-  return s2;
+  return s1;
 }
 
 /** Évaluation complète d'un segment avec la section choisie */
