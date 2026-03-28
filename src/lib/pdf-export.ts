@@ -784,6 +784,53 @@ export function generateExcel(results: SiteResult[], projectName?: string): void
   ws6['!cols'] = [{ wch: 22 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
   ws6['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
   XLSX.utils.book_append_sheet(wb, ws6, "Paramètres");
+
+  // ═══ FEUILLE 7: CABLES PV ═══
+  const RHOC = 0.02314, EPS = 0.03, IMP = 13.33, ISC = 14.07, VMP = 41.64;
+  const SECS = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240];
+  const IZ: Record<number, number> = {1.5:20,2.5:27,4:36,6:47,10:66,16:88,25:117,35:146,50:177,70:226,95:274,120:318,150:363,185:415,240:489};
+  const r7: any[][] = [];
+  r7.push([sc("CABLES PV", true, ORANGE, WHITE), sc(""), sc(""), sc(""), sc(""), sc(""), sc(""), sc("")]);
+  r7.push([sc(""), sc(""), sc(""), sc(""), sc(""), sc(""), sc(""), sc("")]);
+  r7.push([sc("Site", true, LIGHT_GRAY), sc("Segment", true, LIGHT_GRAY), sc("L(m)", true, LIGHT_GRAY), sc("I(A)", true, LIGHT_GRAY), sc("S_calc", true, LIGHT_GRAY), sc("S_choisie", true, LIGHT_GRAY), sc("DV%", true, LIGHT_GRAY), sc("IzOK", true, LIGHT_GRAY)]);
+  results.forEach(r => {
+    const np = r.pv.parallelStrings * r.params.groups;
+    const vM = VMP * r.pv.seriesPerGroup, vS = r.params.systemVoltage;
+    const segs = [{n:"M->BJ",L:3,I:IMP,V:vM,Is:ISC},{n:"BJ->Arm",L:30,I:IMP*np,V:vM,Is:ISC*np},{n:"B->Arm",L:8,I:100,V:vS,Is:ISC*np}];
+    segs.forEach(s => {
+      const sc = (RHOC * 2 * s.L * s.I) / (EPS * s.V);
+      const izr = 1.25 * s.Is;
+      const bi = SECS.findIndex(x => x >= sc);
+      const st = bi === -1 ? SECS.length - 1 : bi;
+      let ch = SECS[st];
+      for(let j=st;j<SECS.length;j++){ if((IZ[SECS[j]]??0)>=izr){ ch=SECS[j]; break; } }
+      const dv = ((RHOC * 2 * s.L * s.I) / (ch * s.V)) * 100;
+      const iz = IZ[ch] ?? 0;
+      const ok = iz >= izr;
+      r7.push([sc(r.siteId, true, null, ORANGE), sc(s.n), sc(s.L), sc(s.I.toFixed(2)), sc(sc.toFixed(2)), sc(ch.toString(),true), sc(dv.toFixed(2)), sc(ok?"OK":"NON",true)]);
+    });
+  });
+  const ws7 = XLSX.utils.aoa_to_sheet(r7);
+  ws7["!cols"] = [{wch:10},{wch:15},{wch:8},{wch:10},{wch:10},{wch:12},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws7, "Cables PV");
+
+  // ═══ FEUILLE 8: MPPT ═══
+  const VOC=41.78,KVO=1.15,VMAX=200;
+  const MPTS: Record<string,string> = {BVS1:"GS-MPPT-100M",BVS2:"GS-MPPT-80M",TA:"GS-MPPT-100M"};
+  const r8: any[][] = [];
+  r8.push([sc("MPPT", true, ORANGE, WHITE), sc(""), sc(""), sc(""), sc(""), sc("")]);
+  r8.push([sc(""), sc(""), sc(""), sc(""), sc(""), sc("")]);
+  r8.push([sc("Site", true, LIGHT_GRAY), sc("Modele", true, LIGHT_GRAY), sc("Ns", true, LIGHT_GRAY), sc("Np", true, LIGHT_GRAY), sc("VocMax", true, LIGHT_GRAY), sc("Statut", true, LIGHT_GRAY)]);
+  results.forEach(r => {
+    const ns=r.pv.seriesPerGroup, np=r.pv.parallelStrings*r.params.groups;
+    const m = MPTS[r.siteId] ?? "GS-MPPT-100M";
+    const vocMax = VOC * ns * KVO;
+    const ok = vocMax <= VMAX;
+    r8.push([sc(r.siteId, true, null, ORANGE), sc(m), sc(ns), sc(np), sc(vocMax.toFixed(2)), sc(ok?"OK":"DANGER",true)]);
+  });
+  const ws8 = XLSX.utils.aoa_to_sheet(r8);
+  ws8["!cols"] = [{wch:10},{wch:18},{wch:8},{wch:8},{wch:12},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws8, "MPPT");
   
   // Save
   const fileName = projectName 
