@@ -259,9 +259,9 @@ export default function SiteCableChecker({ result }: { result: SiteResult }) {
 
         {/* Tableau comparatif */}
         <CompareTable rows={[
-          { id: "S1", label: "S1 — Module → BJ",        sc: seg1.sc, sugg: seg1.sugg, chosen: s1, setChosen: setS1User, isUser: s1User !== null },
-          { id: "S2", label: "S2 — BJ → Armoire",        sc: seg2.sc, sugg: s2Auto,   chosen: s2, setChosen: setS2User, isUser: s2User !== null },
-          { id: "S3", label: "S3 — Batteries → Armoire", sc: seg3.sc, sugg: seg3.sugg, chosen: s3, setChosen: setS3User, isUser: s3User !== null },
+          { id: "S1", label: "S1 — Module → BJ",        sc: seg1.sc, sugg: s1Sugg, chosen: s1, setChosen: setS1User, isUser: s1User !== null },
+          { id: "S2", label: "S2 — BJ → Armoire",        sc: seg2.sc, sugg: s2Sugg,   chosen: s2, setChosen: setS2User, isUser: s2User !== null },
+          { id: "S3", label: "S3 — Batteries → Armoire", sc: seg3.sc, sugg: s3Sugg, chosen: s3, setChosen: setS3User, isUser: s3User !== null },
         ]} />
 
         {/* 3 segments */}
