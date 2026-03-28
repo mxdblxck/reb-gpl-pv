@@ -583,7 +583,7 @@ export default function CableCheckerTab() {
                     Courant admissible Iz @ {form.ambientTemp}C
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Verification: Iz >= 1.25 x Isc ({form.iIsc.toFixed(2)} A)
+                    Verification: Iz superieur/egal 1.25 x Isc ({form.iIsc.toFixed(2)} A)
                   </p>
                 </div>
               </div>
@@ -642,7 +642,7 @@ export default function CableCheckerTab() {
                     { p: "DeltaV", f: "rho x 2L x I / S", v: `${result.deltaVReal.toFixed(3)} V` },
                     { p: "Pertes", f: "rho x 2L x I2 / S", v: `${result.powerLoss.toFixed(2)} W` },
                     { p: "Iz", f: "Table UTE", v: `${result.iz} A` },
-                    { p: "Verif", f: "Iz >= 1.25xIsc", v: result.izCheck ? "OK" : "NON" },
+                    { p: "Verif", f: "Iz sup/egal 1.25xIsc", v: result.izCheck ? "OK" : "NON" },
                   ].map((row, i) => (
                     <tr key={i} className={`border-t border-border ${i % 2 === 0 ? "" : "bg-muted/10"}`}>
                       <td className="px-3 py-2 text-xs font-medium">{row.p}</td>
