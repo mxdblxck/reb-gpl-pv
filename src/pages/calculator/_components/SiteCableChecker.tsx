@@ -51,34 +51,38 @@ function calcEps(L: number, I: number, U: number, S: number): number {
 }
 
 /**
- * Sélection de la section suggérée :
- * 1. Prendre la plus petite section commerciale >= S_min (calculée avec formule exacte)
- * 2. Vérifier Iz >= 1.25×Isc - si pas OK, passer à la section suivante
- * 3. Recommencher jusqu'à ce que les deux conditions soient satisfaites
+ * Sélection de la section commerciale :
+ * 1. Trouver la plus petite section >= S_min (formula exacte)
+ * 2. Vérifier Iz >= 1.25×Isc
+ * 3. Si OK → retourne cette section
+ *    Si non → passer à la section suivante et recommencer
  */
-function pickSugg(sCalc: number, iSc: number): Sec {
+function pickSugg(sMin: number, iSc: number): Sec {
   const izReq = 1.25 * iSc;
   
-  // Première section >= S_calc
-  const baseIdx = SECS.findIndex((s) => s >= sCalc);
-  const start = baseIdx === -1 ? SECS.length - 1 : baseIdx;
-
-  // Chercher la première section qui satisfies les deux conditions
+  // Trouver la première section commerciale >= S_min
+  const startIdx = SECS.findIndex((s) => s >= sMin);
+  const start = startIdx === -1 ? SECS.length - 1 : startIdx;
+  
+  // Chercher la section qui satisfait Iz >= 1.25 * Isc
   for (let i = start; i < SECS.length; i++) {
     const s = SECS[i];
     const iz = IZ[s] ?? 0;
-    if (iz >= izReq) return s;
+    if (iz >= izReq) {
+      return s;
+    }
   }
   
-  // Si aucune ne satisfy, retourner la plus grande
+  // Si aucune section ne satisfait Iz, retourner la plus grande
   return SECS[SECS.length - 1];
 }
 
 /**
- * Cascade S1+S2 : si ε_S1 + ε_S2 > 3%, augmenter S1 d'un cran à chaque itération
- * jusqu'à ce que la somme des chutes <= 3%
+ * Cascade S1 + S2 : si ε_S1 + ε_S2 > 3%, augmenter S1 d'un cran
+ * jusqu'à ce que la somme des chutes soit <= 3%
+ * Retourne la nouvelle section S1 aprè cascade
  */
-function cascadeS2(
+function cascadeS1(
   l1: number, i1: number, u1: number, s1Init: Sec,
   l2: number, i2: number, u2: number, s2: Sec,
 ): Sec {
@@ -152,7 +156,7 @@ export default function SiteCableChecker({ result }: { result: SiteResult }) {
 
   // Cascade : si S1_sugg + S2_sugg > 3%, monter S2
   const s2Auto = useMemo(
-    () => cascadeS2(l1, i1, vMpp, s1Sugg, l2, i2, vMpp, s2Sugg),
+    () => cascadeS1(l1, i1, vMpp, s1Sugg, l2, i2, vMpp, s2Sugg),
     [l1, i1, vMpp, s1Sugg, l2, i2, s2Sugg],
   );
 
