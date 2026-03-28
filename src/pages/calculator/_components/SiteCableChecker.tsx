@@ -198,10 +198,9 @@ export default function SiteCableChecker({ result }: { result: SiteResult }) {
           Vérification Câbles PV — {result.siteId}
           <Badge className={`ml-auto text-[10px] font-bold ${
             allOk ? "bg-green-500/10 text-green-700 border-green-300"
-            : anyDanger ? "bg-destructive/10 text-destructive border-destructive/30"
-            : "bg-amber-500/10 text-amber-700 border-amber-300"
+            : "bg-destructive/10 text-destructive border-destructive/30"
           }`}>
-            {allOk ? "✅ CONFORME" : anyDanger ? "❌ NON CONFORME" : "⚠️ ATTENTION"}
+            {allOk ? "✅ CONFORME" : "❌ NON CONFORME"}
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -233,7 +232,7 @@ export default function SiteCableChecker({ result }: { result: SiteResult }) {
               </p>
               {!circuitOk && (
                 <p className="text-xs font-bold text-destructive mt-0.5">
-                  NON CONFORME — AUGMENTER S2
+                  NON CONFORME — AUGMENTER S1 ou S2
                 </p>
               )}
             </div>
@@ -291,7 +290,7 @@ export default function SiteCableChecker({ result }: { result: SiteResult }) {
         </div>
 
         <p className="text-[10px] text-muted-foreground border-t border-border pt-2">
-          Iz : Pose B1 (paroi), 80°C — Cascade : si ε_S1+ε_S2 {">"}3%, S2 monte d'un cran commercial
+          Vérification conforme aux bonnes pratiques de dimensionnement des câbles photovoltaïques (UTE C15-712-2 / NF C 15-100) : chute de tension totale ≤ 3 % et Iz ≥ 1.25 × Isc à 80 °C.
         </p>
       </CardContent>
     </Card>
@@ -353,13 +352,11 @@ function SegCard({
   chosen: Sec; setChosen: (s: Sec | null) => void;
   seg: SegData;
 }) {
-  const isOk   = seg.status === "ok";
-  const isWarn = seg.status === "warning";
+  const isOk = seg.status === "ok";
 
   return (
     <div className={`rounded-xl border-2 p-3 space-y-3 ${
       isOk ? "border-green-500/40 bg-green-50/10"
-      : isWarn ? "border-amber-400/40 bg-amber-50/10"
       : "border-destructive/50 bg-destructive/5"
     }`}>
       {/* En-tête */}
@@ -370,14 +367,12 @@ function SegCard({
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {isOk ? <CheckCircle2 className="w-4 h-4 text-green-600" />
-            : isWarn ? <AlertTriangle className="w-4 h-4 text-amber-600" />
             : <XCircle className="w-4 h-4 text-destructive" />}
           <Badge className={`text-[10px] font-bold ${
             isOk ? "bg-green-500/10 text-green-700 border-green-300"
-            : isWarn ? "bg-amber-500/10 text-amber-700 border-amber-300"
             : "bg-destructive/10 text-destructive border-destructive/30"
           }`}>
-            {isOk ? "CONFORME" : isWarn ? "ATTENTION" : "NON CONFORME"}
+            {isOk ? "CONFORME" : "NON CONFORME"}
           </Badge>
         </div>
       </div>
