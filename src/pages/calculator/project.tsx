@@ -1,0 +1,398 @@
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { ArrowLeft, Sun, Save, Download, Info, AlertCircle, FileText, FileSpreadsheet } from "lucide-react";
+import { toast } from "sonner";
+import { motion } from "motion/react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
+import { Switch } from "@/components/ui/switch.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
+import SiteParamsForm from "./_components/SiteParamsForm.tsx";
+import SiteResultCard from "./_components/SiteResultCard.tsx";
+import EnergyCharts from "./_components/EnergyCharts.tsx";
+import EnergyLoadInput from "./_components/EnergyLoadInput.tsx";
+import type { SiteParams, SiteResult } from "@/lib/solar-calc.ts";
+import { SITES, getDefaultSiteParams, calculateSite, getSiteFullName } from "@/lib/solar-calc.ts";
+import { generateSizingPDF, generateExcel } from "@/lib/pdf-export.ts";
+
+// Types
+type LocalProject = {
+  id: string;
+  name: string;
+  sites: SiteParams[];
+  notes?: string;
+  description?: string;
+  updatedAt: string;
+};
+
+// Load/save functions for localStorage
+function loadProjects(): LocalProject[] {
+  try {
+    const stored = localStorage.getItem("solar_projects");
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveProjects(projects: LocalProject[]): void {
+  localStorage.setItem("solar_projects", JSON.stringify(projects));
+}
+
+export default function ProjectPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  
+  // Use local storage
+  const [projects, setProjects] = useState<LocalProject[]>(() => loadProjects());
+  
+  // If no ID, redirect to calculator
+  useEffect(() => {
+    if (!id) {
+      navigate("/calculator");
+    }
+  }, [id, navigate]);
+
+  // Find current project by ID - if not found, show empty state
+  const project = id ? projects.find(p => p.id === id) ?? null : null;
+  
+  // If we have an ID but project is not found yet (initial load), show loading
+  const isLoading = id && projects.length === 0;
+
+  if (isLoading) {
+    return (
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-8 space-y-4">
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (project === null && id) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4">
+        <p className="text-muted-foreground text-center">Essai introuvable.</p>
+        <Button onClick={() => navigate("/dashboard")} className="gap-1.5">
+          <ArrowLeft className="w-4 h-4" /> Retour au Tableau de Bord
+        </Button>
+      </div>
+    );
+  }
+
+  const [activeTab, setActiveTab] = useState("BVS1");
+  const [applySimultaneity, setApplySimultaneity] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [siteParams, setSiteParams] = useState<Record<string, SiteParams>>(
+    () => Object.fromEntries(SITES.map((sid) => [sid, getDefaultSiteParams(sid)]))
+  );
+  const [initialized, setInitialized] = useState(false);
+
+  // Charger les données du projet une seule fois
+  useEffect(() => {
+    if (project && !initialized) {
+      const map: Record<string, SiteParams> = Object.fromEntries(
+        SITES.map((sid) => [sid, getDefaultSiteParams(sid)])
+      );
+      (project.sites as SiteParams[]).forEach((s) => {
+        map[s.siteId] = { ...s, margin: (s as any).margin ?? 0.2 };
+      });
+      setSiteParams(map);
+      setInitialized(true);
+    }
+  }, [project, initialized]);
+
+  const results: SiteResult[] = SITES.map((sid) =>
+    calculateSite(siteParams[sid], applySimultaneity)
+  ).filter((r) => r.params.energyLoad > 0);
+
+  const handleEnergyChange = (siteId: string, wh: number) => {
+    setSiteParams((prev) => ({
+      ...prev,
+      [siteId]: { ...prev[siteId], energyLoad: wh },
+    }));
+  };
+
+  const handleMarginChange = (siteId: string, percent: number) => {
+    // Get current energyLoad and calculate new total with margin
+    const currentParams = siteParams[siteId];
+    const baseEnergy = currentParams.energyLoad / (1 + (currentParams.margin || 0));
+    
+    setSiteParams((prev) => ({
+      ...prev,
+      [siteId]: { ...prev[siteId], margin: percent / 100, energyLoad: baseEnergy * (1 + percent / 100) },
+    }));
+  };
+
+  const handleParamsChange = (siteId: string, updated: SiteParams) => {
+    setSiteParams((prev) => ({ ...prev, [siteId]: updated }));
+  };
+
+  const handleSave = () => {
+    if (!id) return;
+    setIsSaving(true);
+    try {
+      const updatedProjects = projects.map(p => 
+        p.id === id 
+          ? { ...p, sites: SITES.map((sid) => siteParams[sid]), updatedAt: new Date().toISOString() }
+          : p
+      );
+      setProjects(updatedProjects);
+      saveProjects(updatedProjects);
+      toast.success("Essai mis à jour.");
+      // Navigate to dashboard after save
+      navigate("/dashboard");
+    } catch {
+      toast.error("Échec de la sauvegarde des modifications.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleExportPDF = () => {
+    if (results.length === 0) {
+      toast.error("Veuillez saisir au moins une charge énergétique pour exporter.");
+      return;
+    }
+    try {
+      generateSizingPDF(results, project?.name);
+      toast.success("Rapport PDF généré.");
+    } catch {
+      toast.error("Échec de la génération du PDF.");
+    }
+  };
+
+  if (project === undefined) {
+    return (
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-8 space-y-4">
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (project === null) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4">
+        <p className="text-muted-foreground text-center">Projet introuvable ou accès refusé.</p>
+        <Button onClick={() => navigate("/dashboard")} className="gap-1.5">
+          <ArrowLeft className="w-4 h-4" /> Retour au Tableau de Bord
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* En-tête */}
+      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-sm border-b border-border">
+        <div className="max-w-6xl mx-auto px-2 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button
+              size="sm"
+              onClick={() => navigate("/dashboard")}
+              className="border border-border bg-transparent text-muted-foreground hover:bg-muted h-8 px-2 shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 bg-primary rounded flex items-center justify-center shrink-0">
+                  <Sun className="w-3 h-3 text-white" />
+                </div>
+                <span className="font-semibold text-sm text-foreground truncate max-w-[120px] sm:max-w-none">
+                  {project.name}
+                </span>
+              </div>
+              {project.description && (
+                <p className="text-[10px] text-muted-foreground">
+                  {project.description}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={handleExportPDF}
+              className="h-8 gap-1 border border-border bg-transparent text-muted-foreground hover:bg-muted text-xs"
+            >
+              <FileText className="w-3 h-3" />
+              <span className="hidden sm:inline">PDF</span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (results.length === 0) {
+                  toast.error("Veuillez saisir au moins une charge énergétique pour exporter.");
+                  return;
+                }
+                try {
+                  generateExcel(results, project?.name);
+                  toast.success("Fichier Excel généré.");
+                } catch {
+                  toast.error("Échec de la génération du fichier Excel.");
+                }
+              }}
+              className="h-8 gap-1 border border-border bg-transparent text-muted-foreground hover:bg-muted text-xs"
+            >
+              <FileSpreadsheet className="w-3 h-3" />
+              <span className="hidden sm:inline">Excel</span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="h-8 gap-1 text-xs"
+            >
+              <Save className="w-3 h-3" />
+              {isSaving ? "Sauvegarde..." : "Enregistrer"}
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
+        {/* Facteur de simultanéité */}
+        <Card>
+          <CardContent className="py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+              <div className="flex items-start gap-3">
+                <Info className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  Facteur de simultanéité UTE C15-712-2 x1.3
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  {applySimultaneity ? "x1.3 appliqué" : "x1.0"}
+                </span>
+                <Switch
+                  checked={applySimultaneity}
+                  onCheckedChange={setApplySimultaneity}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="w-full justify-start overflow-x-auto">
+            {SITES.map((sid) => {
+              const hasLoad = siteParams[sid].energyLoad > 0;
+              return (
+                <TabsTrigger key={sid} value={sid} className="flex items-center gap-1.5 px-3">
+                  {sid}
+                  {hasLoad && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          {SITES.map((sid) => (
+            <TabsContent key={sid} value={sid} className="mt-4 space-y-4">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-4"
+              >
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
+                        <span className="text-white text-[10px] font-bold">{sid}</span>
+                      </div>
+                      <div>
+                        <div className="font-semibold">{sid}</div>
+                        <div className="text-xs font-normal text-muted-foreground">
+                          {getSiteFullName(sid)}
+                        </div>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <EnergyLoadInput
+                      siteId={sid}
+                      totalWh={siteParams[sid].energyLoad}
+                      onTotalChange={(wh) => handleEnergyChange(sid, wh)}
+                      marginPercent={(siteParams[sid].margin || 0) * 100}
+                    />
+                    <SiteParamsForm
+                      params={siteParams[sid]}
+                      onChange={(updated) => handleParamsChange(sid, updated)}
+                    />
+                  </CardContent>
+                </Card>
+
+                {siteParams[sid].energyLoad > 0 ? (
+                  <SiteResultCard
+                    result={calculateSite(siteParams[sid], applySimultaneity)}
+                  />
+                ) : (
+                  <Card className="border-dashed border-border">
+                    <CardContent className="py-10 flex flex-col items-center text-center gap-2">
+                      <AlertCircle className="w-8 h-8 text-muted-foreground/40" />
+                      <p className="text-sm text-muted-foreground">
+                        Saisir la charge énergétique journalière ci-dessus pour calculer le dimensionnement
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </motion.div>
+            </TabsContent>
+          ))}
+        </Tabs>
+
+        {results.length > 0 && <EnergyCharts results={results} />}
+
+        {results.length > 1 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Récapitulatif de Tous les Sites</CardTitle>
+            </CardHeader>
+            <CardContent className="p-2 sm:p-0 overflow-x-auto">
+              <table className="w-full text-xs sm:text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Site</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground">E (Wh/j)</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground">Puissance PV</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground">Modules</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground">Config. PV</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground">Cap. Batterie</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground">Config. Batt.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.map((r, i) => (
+                    <tr key={r.siteId} className={`border-b border-border ${i % 2 === 0 ? "bg-muted/10" : ""}`}>
+                      <td className="px-4 py-3 font-semibold text-primary">{r.siteId}</td>
+                      <td className="px-4 py-3 text-right text-muted-foreground">{r.correctedEnergyLoad.toFixed(0)}</td>
+                      <td className="px-4 py-3 text-right font-medium">{(r.pv.actualPvPower / 1000).toFixed(2)} kWp</td>
+                      <td className="px-4 py-3 text-right">{r.pv.totalModules}</td>
+                      <td className="px-4 py-3 text-right font-mono text-xs">{r.pv.configLabel}</td>
+                      <td className="px-4 py-3 text-right font-medium">{r.battery.actualCapacityAh.toFixed(0)} Ah</td>
+                      <td className="px-4 py-3 text-right font-mono text-xs">{r.battery.configLabel}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        )}
+
+        {project.notes && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm text-muted-foreground">Notes d'Ingénierie</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{project.notes}</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}

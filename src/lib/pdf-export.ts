@@ -1,0 +1,592 @@
+// PDF & Excel Export utility for Solar Sizing Reports
+// REB GPL Line Project — UTE C15-712-2
+
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import type { SiteResult } from "./solar-calc.ts";
+import { formatWp, formatWh, formatAh, calculateRecharge, SITE_DETAIL_CONFIGS, getSiteFullName } from "./solar-calc.ts";
+
+const BRAND_ORANGE = [255, 102, 0] as [number, number, number];
+const BRAND_LIGHT = [255, 242, 230] as [number, number, number];
+const DARK = [30, 20, 10] as [number, number, number];
+const GRAY = [120, 100, 80] as [number, number, number];
+
+export function generateSizingPDF(results: SiteResult[], projectName?: string): void {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 15;
+  const dateStr = new Date().toLocaleDateString('fr-FR', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  // ── En-tête avec logo Sonatrach ────────────────────────────────────────────────
+  doc.setFillColor(...BRAND_ORANGE);
+  doc.rect(0, 0, pageW, 35, "F");
+
+  // Sonatrach logo text
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.text("SONATRACH", margin, 15);
+  
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text("Direction Centrale - Engineering & Project Management", margin, 22);
+  
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("Projet ligne d'expédition GPL 14\" - RHOURDE EL BAGUEL", margin, 29);
+
+  // Right side - Report title
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("RAPPORT DE DIMENSIONNEMENT", pageW - margin, 15, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text("Système Photovoltaïque Autonome (Off-Grid)", pageW - margin, 21, { align: "right" });
+  doc.setFontSize(8);
+  doc.text("Conforme à la norme UTE C15-712-2", pageW - margin, 27, { align: "right" });
+
+  let y = 45;
+
+  // ── Titre du projet ─────────────────────────────────────────────────────────
+  doc.setTextColor(...DARK);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text(`Projet: ${projectName || "Dimensionnement PV - REB GPL"}`, margin, y);
+  y += 8;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...GRAY);
+  doc.text(`Date: ${dateStr}`, margin, y);
+  y += 12;
+
+  // ── Base de calcul et paramètres ─────────────────────────────────────────────
+  doc.setTextColor(...DARK);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("1. BASE DE CALCUL ET PARAMÈTRES", margin, y);
+  y += 7;
+
+  doc.setDrawColor(...BRAND_ORANGE);
+  doc.setLineWidth(0.8);
+  doc.line(margin, y, pageW - margin, y);
+  y += 5;
+
+  const psh = results[0]?.params.psh ?? 4.95;
+  const pr = results[0]?.params.pr ?? 0.72;
+  const modulePower = results[0]?.params.modulePower ?? 555;
+  const systemVoltage = results[0]?.params.systemVoltage ?? 48;
+  const autonomy = results[0]?.params.autonomy ?? 5;
+  const dod = results[0]?.params.dod ?? 0.8;
+  const batteryEff = results[0]?.params.batteryEfficiency ?? 0.85;
+  const unitaryCap = results[0]?.params.unitaryBatteryCapacity ?? 1275;
+  
+  // Dynamic PSH label - show (pire mois) for low values, (moyenne) for higher values
+  const pshLabel = psh <= 5.0 ? "(pire mois)" : "(moyenne)";
+
+  const basis = [
+    ["Emplacement", "Rhourde El Baguel, Algérie (Désert du Sahara)"],
+    ["Heures de Soleil Crête (PSH)", `${psh} h/jour ${pshLabel}`],
+    ["Ratio de Performance (PR)", `${pr} (valeur conservative, pertes câblage/température)`],
+    ["Module PV", `${modulePower} Wp — Jinko Solar (mono-PERC)`],
+    ["Tension Système", `${systemVoltage} V DC`],
+    ["Technologie Batterie", "Ni-Cad (Nickel-Cadmium), 1,2 V/cellule"],
+    ["Autonomie Batterie", `${autonomy} jours`],
+    ["Profondeur de Décharge (DOD)", `${dod * 100}%`],
+    ["Rendement Batterie", `${batteryEff * 100}%`],
+    ["Capacité Unitaire Batterie", `${unitaryCap} Ah`],
+    ["Référence Normative", "IEC 61215, IEC 62259, IEEE 1115 et UTE C15-712-2"],
+  ];
+
+  autoTable(doc, {
+    startY: y,
+    body: basis,
+    theme: "plain",
+    styles: { fontSize: 9, cellPadding: 3 },
+    columnStyles: {
+      0: { fontStyle: "bold", cellWidth: 55, textColor: [80, 80, 80] },
+      1: { cellWidth: "auto", textColor: DARK },
+    },
+    margin: { left: margin, right: margin },
+  });
+
+  y = ((doc as unknown) as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+
+  // ── Formules de dimensionnement ────────────────────────────────────────────
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...DARK);
+  doc.text("2. FORMULES DE DIMENSIONNEMENT", margin, y);
+  y += 7;
+  doc.setDrawColor(...BRAND_ORANGE);
+  doc.line(margin, y, pageW - margin, y);
+  y += 5;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  const formulas = [
+    ["Puissance PV Requise (Wp)", "P_req = E / (PSH x PR)"],
+    ["Nombre de Modules", "N = ceil(P_req / P_module)"],
+    ["Capacite Batterie Requise (Ah)", "C_req = (E x Autonomie) / (DOD x n_batt x V_sys)"],
+    ["Cellules en Serie", "N_cells = V_sys / V_cellule"],
+    ["Branches Paralleles", "N_branches = ceil(C_req / C_unitaire)"],
+  ];
+  
+  formulas.forEach(([formula, calc]) => {
+    doc.setTextColor(...DARK);
+    doc.text(`-  ${formula}:`, margin, y);
+    doc.setTextColor(...GRAY);
+    doc.text(calc, margin + 75, y);
+    y += 6;
+  });
+  y += 5;
+
+  // ── Résultats par site ──────────────────────────────────────────────────────
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    if (y > 220) {
+      doc.addPage();
+      y = 20;
+    }
+
+    const { siteId, pv, battery, params, correctedEnergyLoad, simultaneityFactor } = result;
+    const siteName = getSiteFullName(siteId);
+
+    // En-tête du site
+    doc.setFillColor(...BRAND_LIGHT);
+    doc.rect(margin, y - 3, pageW - 2 * margin, 12, "F");
+    doc.setFillColor(...BRAND_ORANGE);
+    doc.rect(margin, y - 3, 4, 12, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(...BRAND_ORANGE);
+    doc.text(`SITE ${siteId}`, margin + 7, y + 4);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...DARK);
+    doc.text(siteName, margin + 35, y + 4);
+
+    doc.setFontSize(9);
+    doc.setTextColor(...GRAY);
+    doc.text(
+      `E = ${correctedEnergyLoad.toFixed(0)} Wh/jour${simultaneityFactor > 1 ? ` (×${simultaneityFactor} simultanéité)` : ""}`,
+      pageW - margin,
+      y + 4,
+      { align: "right" }
+    );
+
+    y += 16;
+
+    // ── Système PV ─────────────────────────────────────────────────────────────
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...DARK);
+    doc.text(`3.${i + 1} Système Photovoltaïque - ${siteId}`, margin, y);
+    y += 3;
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Paramètre", "Valeur", "Formule / Note"]],
+      body: [
+        ["Puissance PV Requise", formatWp(pv.pvRequiredWp), `E / (PSH * PR) = ${correctedEnergyLoad.toFixed(0)} / (${params.psh} * ${params.pr})`],
+        ["Puissance PV Installée", formatWp(pv.actualPvPower), `${pv.totalModules} * ${params.modulePower} Wp`],
+        ["Nombre Total de Modules", `${pv.totalModules} modules`, `${pv.nModulesPerGroup}/groupe * ${params.groups} groupe(s)`],
+        ["Configuration", pv.configLabel, "Groupes * Série * Parallèle"],
+        ["Modules en Série/String", `${pv.seriesPerGroup} modules`, "Plage tension MPPT"],
+        ["Strings en Parallèle", `${pv.parallelStrings}`, "par groupe"],
+      ],
+      theme: "striped",
+      headStyles: { fillColor: BRAND_ORANGE, textColor: [255, 255, 255], fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      alternateRowStyles: { fillColor: BRAND_LIGHT },
+      columnStyles: {
+        0: { cellWidth: 55, fontStyle: "bold" },
+        1: { cellWidth: 45, halign: "right" },
+        2: { cellWidth: "auto", textColor: GRAY },
+      },
+      margin: { left: margin, right: margin },
+    });
+    y = ((doc as unknown) as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+
+    // ── Batterie ────────────────────────────────────────────────────────────────
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...DARK);
+    doc.text(`3.${i + 2} Parc Batteries - ${siteId}`, margin, y);
+    y += 3;
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Paramètre", "Valeur", "Formule / Note"]],
+      body: [
+        ["Capacité Requise", formatAh(battery.capacityAh), `(E * ${params.autonomy}j) / (${params.dod} * ${params.batteryEfficiency} * ${params.systemVoltage}V)`],
+        ["Énergie Requise", formatWh(battery.capacityWh), `A ${params.systemVoltage} V nominal`],
+        ["Capacité Installée", formatAh(battery.actualCapacityAh), `${battery.parallelBranches} branche(s) * ${params.unitaryBatteryCapacity} Ah`],
+        ["Énergie Installée", formatWh(battery.actualCapacityWh), "Nominale à la tension système"],
+        ["Cellules en Série", `${battery.cellsInSeries} cellules`, `${params.systemVoltage}V / ${params.cellVoltage}V/cellule`],
+        ["Branches Parallèles", `${battery.parallelBranches}`, `ceil(${battery.capacityAh.toFixed(0)} / ${params.unitaryBatteryCapacity})`],
+        ["Configuration", battery.configLabel, "Série * Parallèle (Ni-Cad)"],
+        ["Total Cellules", `${battery.totalCells}`, `${battery.cellsInSeries}S * ${battery.parallelBranches}P`],
+      ],
+      theme: "striped",
+      headStyles: { fillColor: [80, 60, 40], textColor: [255, 255, 255], fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      alternateRowStyles: { fillColor: [250, 245, 240] },
+      columnStyles: {
+        0: { cellWidth: 55, fontStyle: "bold" },
+        1: { cellWidth: 45, halign: "right" },
+        2: { cellWidth: "auto", textColor: GRAY },
+      },
+      margin: { left: margin, right: margin },
+    });
+    y = ((doc as unknown) as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+
+    // ── Configuration détaillée suggérée ──────────────────────────────────────
+    const detailConfig = SITE_DETAIL_CONFIGS[siteId];
+    if (detailConfig) {
+      if (y > 200) { doc.addPage(); y = 20; }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(...DARK);
+      doc.text(`3.${i + 3} Configuration Détaillée Suggérée - ${siteId}`, margin, y);
+      y += 3;
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Paramètre", "Système PV", "Parc Batteries"]],
+        body: [
+          ["Configuration", detailConfig.pvLabel, detailConfig.battLabel],
+          ["Nombre / Cellules", `${detailConfig.pvTotalModules} modules`, `${detailConfig.battSeries}S × ${detailConfig.battParallel}P`],
+          ["Puissance / Capacité", formatWp(detailConfig.pvInstalledWp), formatAh(detailConfig.battTotalAh)],
+        ],
+        theme: "grid",
+        headStyles: { fillColor: [180, 120, 0], textColor: [255, 255, 255], fontSize: 9 },
+        bodyStyles: { fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 45, fontStyle: "bold" },
+          1: { cellWidth: 60, halign: "center" },
+          2: { cellWidth: "auto", halign: "center" },
+        },
+        margin: { left: margin, right: margin },
+      });
+      y = ((doc as unknown) as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+    }
+
+    // ── Temps de recharge ─────────────────────────────────────────────────────
+    if (y > 180) { doc.addPage(); y = 20; }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...DARK);
+    doc.text(`3.${i + 4} Temps de Recharge des Batteries - ${siteId}`, margin, y);
+    y += 5;
+
+    const recharge = calculateRecharge(result);
+    const { pPvNet, pLoadAvg, scenarios } = recharge;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY);
+    doc.text(
+      `P_pv_net = P_inst x PR = ${pv.actualPvPower.toFixed(0)} x ${params.pr} = ${pPvNet.toFixed(0)} W    |    P_moyenne = E / 24 = ${pLoadAvg.toFixed(1)} W`,
+      margin,
+      y + 4
+    );
+    doc.text(
+      `T_recharge = Energie_autonomie / (Surplus_quotidien x n_batt)`,
+      margin,
+      y + 9
+    );
+    y += 14;
+
+    autoTable(doc, {
+      startY: y,
+      head: [["PSH (h/j)", "E_pv_net (Wh/j)", "E_charge (Wh)", "Surplus (Wh/j)", "T_recharge (jours)"]],
+      body: scenarios.map((s) => [
+        `${s.sunHours} h`,
+        s.ePvJ.toFixed(0),
+        s.eLoadDuringPSH.toFixed(0),
+        s.eRechargeJ > 0 ? `+${s.eRechargeJ.toFixed(0)}` : s.eRechargeJ.toFixed(0),
+        s.daysToRecharge !== null ? `${s.daysToRecharge.toFixed(2)} j` : "Pas de surplus",
+      ]),
+      theme: "striped",
+      headStyles: { fillColor: [60, 120, 60], textColor: [255, 255, 255], fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      alternateRowStyles: { fillColor: [240, 248, 240] },
+      columnStyles: {
+        0: { cellWidth: 20, fontStyle: "bold" },
+        1: { cellWidth: 35, halign: "right" },
+        2: { cellWidth: 35, halign: "right" },
+        3: { cellWidth: 35, halign: "right" },
+        4: { cellWidth: "auto", halign: "right", fontStyle: "bold" },
+      },
+      margin: { left: margin, right: margin },
+    });
+    y = ((doc as unknown) as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
+  }
+
+  // ── Récapitulatif de tous les sites ────────────────────────────────────────
+  if (results.length > 1) {
+    if (y > 180) {
+      doc.addPage();
+      y = 20;
+    }
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...DARK);
+    doc.text("4. RÉCAPITULATIF GLOBAL", margin, y);
+    y += 7;
+    doc.setDrawColor(...BRAND_ORANGE);
+    doc.line(margin, y, pageW - margin, y);
+    y += 3;
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Site", "E (Wh/j)", "Puissance PV", "Modules", "Config PV", "Capacité Batt.", "Config Batt."]],
+      body: results.map((r) => [
+        r.siteId,
+        r.correctedEnergyLoad.toFixed(0),
+        formatWp(r.pv.actualPvPower),
+        r.pv.totalModules.toString(),
+        r.pv.configLabel,
+        formatAh(r.battery.actualCapacityAh),
+        r.battery.configLabel,
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: BRAND_ORANGE, textColor: [255, 255, 255], fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      margin: { left: margin, right: margin },
+    });
+  }
+
+  // ── Pied de page sur toutes les pages ──────────────────────────────────────
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY);
+    doc.text(
+      `SONATRACH DC-EPM — Projet REB GPL Ligne | Préparé par: Mohamed ADDA | Page ${i}/${pageCount}`,
+      pageW / 2,
+      doc.internal.pageSize.getHeight() - 7,
+      { align: "center" }
+    );
+  }
+
+  // Add logo at the end - last page
+  try {
+    const logoPath = "public/icon/REB LIGNE GPL.svg";
+    doc.addPage();
+    const lastPageH = doc.internal.pageSize.getHeight();
+    doc.setFillColor(...BRAND_ORANGE);
+    doc.rect(0, lastPageH - 50, pageW, 50, "F");
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("SONATRACH", margin, lastPageH - 30);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("Direction Centrale - Engineering & Project Management", margin, lastPageH - 22);
+    doc.text("Projet ligne d'expédition GPL 14\" - RHOURDE EL BAGUEL", margin, lastPageH - 14);
+  } catch (e) {
+    console.log("Logo not added:", e);
+  }
+
+  // Nom du fichier avec date
+  const fileName = projectName 
+    ? `REB-GPL-PV-${projectName.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().slice(0, 10)}.pdf`
+    : `REB-GPL-PV-Dimensionnement-${new Date().toISOString().slice(0, 10)}.pdf`;
+    
+  doc.save(fileName);
+}
+
+// Excel Export function - Professional layout with brand colors
+export function generateExcel(results: SiteResult[], projectName?: string): void {
+  const wb = XLSX.utils.book_new();
+  
+  // Brand colors
+  const ORANGE = { r: 255, g: 102, b: 0 };
+  const WHITE = { r: 255, g: 255, b: 255 };
+  const DARK = { r: 30, g: 20, b: 10 };
+  const LIGHT_GRAY = { r: 243, g: 244, b: 246 };
+  // Helper for styled cell
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sc = (v: any, bold: any = false, bg: any = null, fc: any = DARK) => ({
+    v,
+    s: {
+      font: { bold, color: { rgb: fc === DARK ? '1E1414' : 'FFFFFF' } },
+      fill: bg ? { fgColor: { rgb: bg === ORANGE ? 'FF6600' : 'F3F4F6' } } : undefined,
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: { left: { style: 'thin', color: { rgb: 'E5E7EB' } }, right: { style: 'thin', color: { rgb: 'E5E7EB' } }, top: { style: 'thin', color: { rgb: 'E5E7EB' } }, bottom: { style: 'thin', color: { rgb: 'E5E7EB' } } },
+    },
+  });
+  
+  // ═══ FEUILLE 1: RÉSUMÉ ═══
+  const r1: any[][] = [];
+  r1.push([sc("SONATRACH", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r1.push([sc("Projet: REB GPL LIGNE - Rhourde El Baguel", true), sc(""), sc(""), sc(""), sc("")]);
+  r1.push([sc(`Date: ${new Date().toLocaleDateString('fr-FR')}`, false), sc(""), sc(""), sc(""), sc("")]);
+  r1.push([sc(""), sc(""), sc(""), sc(""), sc("")]);
+  r1.push([sc("RÉSUMÉ DU DIMENSIONNEMENT", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r1.push([sc(""), sc(""), sc(""), sc(""), sc("")]);
+  
+  // Table header
+  r1.push([sc("Site", true, LIGHT_GRAY), sc("Énergie (Wh/j)", true, LIGHT_GRAY), sc("Puissance PV (kWp)", true, LIGHT_GRAY), sc("Modules", true, LIGHT_GRAY), sc("Capacité Batt (Ah)", true, LIGHT_GRAY)]);
+  
+  // Data rows
+  results.forEach((r, i) => {
+    const bg = i % 2 === 0 ? null : LIGHT_GRAY;
+    r1.push([sc(r.siteId, true, bg, ORANGE), sc(Math.round(r.correctedEnergyLoad), false, bg), sc((r.pv.actualPvPower / 1000).toFixed(2), false, bg), sc(r.pv.totalModules, false, bg), sc(Math.round(r.battery.actualCapacityAh), false, bg)]);
+  });
+  
+  r1.push([sc(""), sc(""), sc(""), sc(""), sc("")]);
+  
+  // Parameters
+  r1.push([sc("PARAMÈTRES", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  if (results[0]) {
+    const p = results[0].params;
+    r1.push([sc("PSH", true), sc(`${p.psh} h/jour`), sc(""), sc(""), sc("")]);
+    r1.push([sc("PR", true), sc(p.pr.toString()), sc(""), sc(""), sc("")]);
+    r1.push([sc("Autonomie", true), sc(`${p.autonomy} jours`), sc(""), sc(""), sc("")]);
+    r1.push([sc("DOD", true), sc(`${(p.dod * 100).toFixed(0)}%`), sc(""), sc(""), sc("")]);
+    r1.push([sc("Tension", true), sc(`${p.systemVoltage}V DC`), sc(""), sc(""), sc("")]);
+  }
+  
+  const ws1 = XLSX.utils.aoa_to_sheet(r1);
+  ws1['!cols'] = [{ wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 18 }];
+  ws1['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 4 } }, { s: { r: 4, c: 0 }, e: { r: 4, c: 4 } }, { s: { r: 10, c: 0 }, e: { r: 10, c: 4 } }];
+  XLSX.utils.book_append_sheet(wb, ws1, "Résumé");
+  
+  // ═══ FEUILLE 2: SYSTÈME PV ═══
+  const r2: any[][] = [];
+  r2.push([sc("DÉTAIL SYSTÈME PHOTOVOLTAÏQUE", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r2.push([sc(""), sc(""), sc(""), sc(""), sc(""), sc("")]);
+  r2.push([sc("Site", true, LIGHT_GRAY), sc("P_req (Wp)", true, LIGHT_GRAY), sc("P_inst (Wp)", true, LIGHT_GRAY), sc("Modules", true, LIGHT_GRAY), sc("Série", true, LIGHT_GRAY), sc("Parallèle", true, LIGHT_GRAY)]);
+  
+  results.forEach((r, i) => {
+    const bg = i % 2 === 0 ? null : LIGHT_GRAY;
+    r2.push([sc(r.siteId, true, bg, ORANGE), sc(Math.round(r.pv.pvRequiredWp), false, bg), sc(Math.round(r.pv.actualPvPower), false, bg), sc(r.pv.totalModules, false, bg), sc(r.pv.seriesPerGroup, false, bg), sc(r.pv.parallelStrings, false, bg)]);
+  });
+  
+  const ws2 = XLSX.utils.aoa_to_sheet(r2);
+  ws2['!cols'] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
+  ws2['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }];
+  XLSX.utils.book_append_sheet(wb, ws2, "Système PV");
+  
+  // ═══ FEUILLE 3: BATTERIES ═══
+  const r3: any[][] = [];
+  r3.push([sc("DÉTAIL PARC BATTERIES", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r3.push([sc(""), sc(""), sc(""), sc(""), sc(""), sc(""), sc("")]);
+  r3.push([sc("Site", true, LIGHT_GRAY), sc("Capacité (Ah)", true, LIGHT_GRAY), sc("Énergie (Wh)", true, LIGHT_GRAY), sc("Cellules Série", true, LIGHT_GRAY), sc("Branches", true, LIGHT_GRAY), sc("Total", true, LIGHT_GRAY), sc("Config", true, LIGHT_GRAY)]);
+  
+  results.forEach((r, i) => {
+    const bg = i % 2 === 0 ? null : LIGHT_GRAY;
+    r3.push([sc(r.siteId, true, bg, ORANGE), sc(Math.round(r.battery.actualCapacityAh), false, bg), sc(Math.round(r.battery.actualCapacityWh), false, bg), sc(r.battery.cellsInSeries, false, bg), sc(r.battery.parallelBranches, false, bg), sc(r.battery.totalCells, false, bg), sc(r.battery.configLabel, false, bg)]);
+  });
+  
+  const ws3 = XLSX.utils.aoa_to_sheet(r3);
+  ws3['!cols'] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 20 }];
+  ws3['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }];
+  XLSX.utils.book_append_sheet(wb, ws3, "Batteries");
+  
+  // ═══ FEUILLE 4: BILAN DE PUISSANCE ═══
+  const r4: any[][] = [];
+  r4.push([sc("BILAN DE PUISSANCE", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r4.push([sc(""), sc(""), sc(""), sc(""), sc("")]);
+  
+  results.forEach((r) => {
+    const pLoad = r.correctedEnergyLoad;
+    const pLoadAvg = pLoad / 24;
+    const pPvNet = r.pv.actualPvPower * r.params.pr;
+    const daysToFull = r.battery.actualCapacityWh / pLoad;
+    
+    r4.push([sc(`Site: ${r.siteId}`, true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+    r4.push([sc("Paramètre", true, LIGHT_GRAY), sc("Symbole", true, LIGHT_GRAY), sc("Valeur", true, LIGHT_GRAY), sc("Unité", true, LIGHT_GRAY), sc("Formule", true, LIGHT_GRAY)]);
+    r4.push([sc("Énergie journalière", false, null), sc("E"), sc(Math.round(pLoad)), sc("Wh/j"), sc("")]);
+    r4.push([sc("Puissance moyenne", false, null), sc("P_moy"), sc(pLoadAvg.toFixed(1)), sc("W"), sc("E / 24")]);
+    r4.push([sc("Puissance PV installée", false, null), sc("P_pv"), sc(Math.round(r.pv.actualPvPower)), sc("Wp"), sc("")]);
+    r4.push([sc("Puissance PV nette", false, null), sc("P_pv_net"), sc(Math.round(pPvNet)), sc("W"), sc("P_inst × PR")]);
+    r4.push([sc("Capacité batterie", false, null), sc("C_batt"), sc(Math.round(r.battery.actualCapacityWh)), sc("Wh"), sc("")]);
+    r4.push([sc("Jours autonomie", false, null), sc("N_jours"), sc(daysToFull.toFixed(1)), sc("jours"), sc("C / P_moy")]);
+    r4.push([sc(""), sc(""), sc(""), sc(""), sc("")]);
+  });
+  
+  const ws4 = XLSX.utils.aoa_to_sheet(r4);
+  ws4['!cols'] = [{ wch: 22 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 20 }];
+  XLSX.utils.book_append_sheet(wb, ws4, "Bilan Puissance");
+  
+  // ═══ FEUILLE 5: TEMPS DE RECHARGE ═══
+  const r5: any[][] = [];
+  r5.push([sc("TEMPS DE RECHARGE DES BATTERIES", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r5.push([sc(""), sc(""), sc(""), sc(""), sc("")]);
+  
+  results.forEach((r) => {
+    r5.push([sc(`Site: ${r.siteId}`, true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+    r5.push([sc("PSH (h/j)", true, LIGHT_GRAY), sc("E_pv (Wh/j)", true, LIGHT_GRAY), sc("Echarge (Wh)", true, LIGHT_GRAY), sc("Surplus", true, LIGHT_GRAY), sc("Jours", true, LIGHT_GRAY)]);
+    
+    const rech = calculateRecharge(r);
+    rech.scenarios.forEach((s, i) => {
+      const bg = i % 2 === 0 ? null : LIGHT_GRAY;
+      r5.push([sc(s.sunHours, false, bg), sc(Math.round(s.ePvJ), false, bg), sc(Math.round(s.eLoadDuringPSH), false, bg), sc(s.eRechargeJ > 0 ? "+" + Math.round(s.eRechargeJ) : Math.round(s.eRechargeJ), false, bg), sc(s.daysToRecharge?.toFixed(2) || "N/A", true, bg, ORANGE)]);
+    });
+    r5.push([sc(""), sc(""), sc(""), sc(""), sc("")]);
+  });
+  
+  const ws5 = XLSX.utils.aoa_to_sheet(r5);
+  ws5['!cols'] = [{ wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 15 }];
+  XLSX.utils.book_append_sheet(wb, ws5, "Temps Recharge");
+  
+  // ═══ FEUILLE 6: PARAMÈTRES ═══
+  const r6: any[][] = [];
+  r6.push([sc("PARAMÈTRES D'ENTRÉE", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r6.push([sc(""), sc(""), sc(""), sc("")]);
+  r6.push([sc("Paramètre", true, LIGHT_GRAY), sc("BVS1", true, LIGHT_GRAY), sc("BVS2", true, LIGHT_GRAY), sc("TA", true, LIGHT_GRAY)]);
+  
+  const paramRows = [
+    ["Énergie (Wh/j)", "energyLoad"],
+    ["PSH (h/j)", "psh"],
+    ["PR", "pr"],
+    ["Module (Wp)", "modulePower"],
+    ["Groupes", "groups"],
+    ["Autonomie (jours)", "autonomy"],
+    ["DOD", "dod"],
+    ["Tension (V)", "systemVoltage"],
+    ["Capacité (Ah)", "unitaryBatteryCapacity"],
+  ];
+  
+  paramRows.forEach((row, i) => {
+    const bg = i % 2 === 0 ? null : LIGHT_GRAY;
+    const key = row[1] as keyof typeof results[0]['params'];
+    r6.push([
+      sc(row[0], true, bg),
+      sc(results[0] ? String(results[0].params[key] ?? "-") : "-", false, bg),
+      sc(results[1] ? String(results[1].params[key] ?? "-") : "-", false, bg),
+      sc(results[2] ? String(results[2].params[key] ?? "-") : "-", false, bg),
+    ]);
+  });
+  
+  const ws6 = XLSX.utils.aoa_to_sheet(r6);
+  ws6['!cols'] = [{ wch: 22 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+  ws6['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
+  XLSX.utils.book_append_sheet(wb, ws6, "Paramètres");
+  
+  // Save
+  const fileName = projectName 
+    ? `REB-GPL-PV-${projectName.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().slice(0, 10)}.xlsx`
+    : `REB-GPL-PV-Dimensionnement-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+}
