@@ -370,6 +370,207 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
     });
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECTION 4: CABLES PV - VERIFICATION PAR SITE
+  // ═══════════════════════════════════════════════════════════════════════════════
+  if (y > 150) { doc.addPage(); y = 20; }
+  
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...DARK);
+  doc.text("5. VERIFICATION CABLES PV - PAR SITE", margin, y);
+  y += 7;
+  doc.setDrawColor(...BRAND_ORANGE);
+  doc.line(margin, y, pageW - margin, y);
+  y += 8;
+  
+  // Parametres fixes pour le calcul Cable (comme SiteCableChecker)
+  const RHO_CU = 0.02314;
+  const EPSILON = 0.03;
+  const IMP = 13.33;
+  const ISC = 14.07;
+  const VMP = 41.64;
+  const L1_DEF = 3;
+  const L2_DEF = 30;
+  const L3_DEF = 8;
+  
+  const SECS_CABLE = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240];
+  const IZ_TABLE: Record<number, number> = {
+    1.5: 20, 2.5: 27, 4: 36, 6: 47, 10: 66, 16: 88, 25: 117, 35: 146, 
+    50: 177, 70: 226, 95: 274, 120: 318, 150: 363, 185: 415, 240: 489,
+  };
+  
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    const { pv, params } = result;
+    const siteId = result.siteId;
+    
+    if (y > 200) { doc.addPage(); y = 20; }
+    
+    // En-tete site cable
+    doc.setFillColor(255, 242, 230);
+    doc.rect(margin, y - 3, pageW - 2*margin, 8, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...BRAND_ORANGE);
+    doc.text(`Cables PV - ${siteId}`, margin + 3, y + 2);
+    y += 12;
+    
+    const np = pv.parallelStrings * params.groups;
+    const vMpp = VMP * pv.seriesPerGroup;
+    const vSys = params.systemVoltage;
+    
+    // Courants de design
+    const i1 = IMP;
+    const i2 = IMP * np;
+    const i3 = 100;
+    
+    // Segments
+    const segs = [
+      { name: "Module -> Boite Jonction", L: L1_DEF, I: i1, V: vMpp, Isc: ISC },
+      { name: "Boite -> Armoire", L: L2_DEF, I: i2, V: vMpp, Isc: ISC * np },
+      { name: "Batterie -> Armoire", L: L3_DEF, I: i3, V: vSys, Isc: ISC * np },
+    ];
+    
+    const segData = segs.map(seg => {
+      const sCalc = (RHO_CU * 2 * seg.L * seg.I) / (EPSILON * seg.V);
+      const izReq = 1.25 * seg.Isc;
+      const baseIdx = SECS_CABLE.findIndex((s) => s >= sCalc);
+      const start = baseIdx === -1 ? SECS_CABLE.length - 1 : baseIdx;
+      let chosen = SECS_CABLE[start];
+      for (let j = start; j < SECS_CABLE.length; j++) {
+        if ((IZ_TABLE[SECS_CABLE[j]] ?? 0) >= izReq) { chosen = SECS_CABLE[j]; break; }
+      }
+      const eps = ((RHO_CU * 2 * seg.L * seg.I) / (chosen * seg.V)) * 100;
+      const dvV = (RHO_CU * 2 * seg.L * seg.I) / chosen;
+      const pLoss = (RHO_CU * 2 * seg.L * seg.I * seg.I) / chosen;
+      const iz = IZ_TABLE[chosen] ?? 0;
+      const izOk = iz >= izReq;
+      return { sCalc, chosen, eps, dvV, pLoss, iz, izReq, izOk };
+    });
+    
+    const totalDv = segData[0].eps + segData[1].eps;
+    
+    autoTable(doc, {
+      startY: y,
+      head: [["Segment", "L (m)", "I (A)", "S_calc (mm2)", "S_choisie (mm2)", "Delta V (%)", "Iz (A)", "Iz OK", "Pertes (W)"]],
+      body: segData.map((s, idx) => [
+        segs[idx].name,
+        segs[idx].L.toString(),
+        segs[idx].I.toFixed(2),
+        s.sCalc.toFixed(2),
+        s.chosen.toString(),
+        s.eps.toFixed(2) + (s.eps <= 3 ? "" : " ***"),
+        s.iz.toString(),
+        s.izOk ? "OK" : "NON",
+        s.pLoss.toFixed(2),
+      ]),
+      theme: "striped",
+      headStyles: { fillColor: [255, 102, 0], textColor: [255, 255, 255], fontSize: 8 },
+      bodyStyles: { fontSize: 8 },
+      alternateRowStyles: { fillColor: [255, 242, 230] },
+      columnStyles: {
+        0: { cellWidth: 45 },
+        1: { halign: "center" },
+        2: { halign: "center" },
+        3: { halign: "center" },
+        4: { halign: "center", fontStyle: "bold" },
+        5: { halign: "center" },
+        6: { halign: "center" },
+        7: { halign: "center", fontStyle: "bold" },
+        8: { halign: "center" },
+      },
+      margin: { left: margin, right: margin },
+    });
+    y = ((doc as unknown) as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
+    
+    // Total chute de tension
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...DARK);
+    doc.text(`Chute de tension totale (Module -> Armoire): ${totalDv.toFixed(2)}%`, margin, y);
+    y += 10;
+  }
+  
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECTION 5: COMPATIBILITE MPPT - PAR SITE
+  // ═══════════════════════════════════════════════════════════════════════════════
+  if (y > 150) { doc.addPage(); y = 20; }
+  
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...DARK);
+  doc.text("6. COMPATIBILITE MPPT - PAR SITE", margin, y);
+  y += 7;
+  doc.setDrawColor(...BRAND_ORANGE);
+  doc.line(margin, y, pageW - margin, y);
+  y += 8;
+  
+  const VOC_DEF = 41.78;
+  const ISC_DEF = 14.07;
+  const K_VOC = 1.15;
+  const K_ISC = 1.25;
+  const V_MAX_MPPT = 200;
+  
+  const SITE_MPPT_MODEL: Record<string, string> = {
+    BVS1: "GS-MPPT-100M", BVS2: "GS-MPPT-80M", TA: "GS-MPPT-100M",
+  };
+  
+  const MPPT_SPECS: Record<string, { vmax: number; imax: number; label: string }> = {
+    "GS-MPPT-100M": { vmax: 200, imax: 100, label: "Morning Star GS-MPPT-100M" },
+    "GS-MPPT-80M":  { vmax: 200, imax: 80,  label: "Morning Star GS-MPPT-80M" },
+  };
+  
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    const { pv, params } = result;
+    const siteId = result.siteId;
+    
+    if (y > 200) { doc.addPage(); y = 20; }
+    
+    const ns = pv.seriesPerGroup;
+    const np = pv.parallelStrings * params.groups;
+    const model = SITE_MPPT_MODEL[siteId] ?? "GS-MPPT-100M";
+    const specs = MPPT_SPECS[model];
+    
+    const vocMax = VOC_DEF * ns * K_VOC;
+    const iscMax = ISC_DEF * np * K_ISC;
+    const vocOk = vocMax <= V_MAX_MPPT;
+    const iscOk = iscMax <= specs.imax;
+    
+    // En-tete MPPT
+    doc.setFillColor(255, 242, 230);
+    doc.rect(margin, y - 3, pageW - 2*margin, 8, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...BRAND_ORANGE);
+    doc.text(`MPPT - ${siteId} (${model})`, margin + 3, y + 2);
+    y += 12;
+    
+    autoTable(doc, {
+      startY: y,
+      head: [["Parametre", "Valeur", "Limite", "Statut"]],
+      body: [
+        ["Modules en serie (Ns)", ns.toString(), "-", "-"],
+        ["Chaines en parallele (Np)", np.toString(), "-", "-"],
+        ["Voc max (Voc x Ns x " + K_VOC + ")", vocMax.toFixed(2) + " V", V_MAX_MPPT + " V", vocOk ? "CONFORME" : "DANGER"],
+        ["Isc max (Isc x Np x " + K_ISC + ")", iscMax.toFixed(2) + " A", specs.imax + " A", iscOk ? "CONFORME" : "DANGER"],
+      ],
+      theme: "striped",
+      headStyles: { fillColor: [255, 102, 0], textColor: [255, 255, 255], fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      alternateRowStyles: { fillColor: [255, 242, 230] },
+      columnStyles: {
+        0: { cellWidth: 50, fontStyle: "bold" },
+        1: { halign: "center" },
+        2: { halign: "center" },
+        3: { halign: "center", fontStyle: "bold" },
+      },
+      margin: { left: margin, right: margin },
+    });
+    y = ((doc as unknown) as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+  }
+
   // ── Pied de page sur toutes les pages ──────────────────────────────────────
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {

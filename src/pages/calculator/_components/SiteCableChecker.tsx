@@ -29,7 +29,7 @@ const L2_DEF = 30;
 const L3_DEF = 8;
 
 // Sections commerciales PV (mm²) — liste stricte, pas de valeurs absurdes
-const SECS = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120] as const;
+const SECS = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240] as const;
 type Sec = (typeof SECS)[number];
 
 // Iz à 80°C — Pose B1, deux câbles adjacents sur paroi
