@@ -323,7 +323,7 @@ export const RHO_CU_80 = 0.02314; // Ω·mm²/m
 export const RHO_AL_80 = 0.0377;  // Ω·mm²/m (aluminium)
 
 // Sections commerciales normalisées (mm²)
-export const COMMERCIAL_SECTIONS = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120] as const;
+export const COMMERCIAL_SECTIONS = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240] as const;
 
 // Courant admissible Iz à 80°C en pose libre (câble PV, UTE C15-100 / IEC 60364)
 // Valeurs conservatives pour environnement désertique (80°C ambiant)
@@ -368,7 +368,7 @@ export function calculateCableSection(input: CableCheckerInput): CableCheckerRes
   const sectionMin = (rho * 2 * cableLength * iCalc) / (epsilon * systemVoltage);
 
   // Section commerciale : première valeur ≥ sectionMin
-  const sectionCommercial = COMMERCIAL_SECTIONS.find((s) => s > sectionMin) ?? 120;
+  const sectionCommercial = COMMERCIAL_SECTIONS.find((s) => s >= sectionMin) ?? 120;
 
   // Chute de tension réelle avec la section commerciale
   const deltaVReal = (rho * 2 * cableLength * iCalc) / sectionCommercial;
