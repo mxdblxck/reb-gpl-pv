@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import {
   CheckCircle2, XCircle, AlertTriangle, Cable, FileText, Info, Zap, Thermometer, Gauge,
   ChevronDown, ChevronUp, Settings, Calculator, TrendingDown, Activity,
-  RotateCcw, Copy, Check, Sparkles, Lightning, Shield
+  RotateCcw, Copy, Check, Sparkles, Zap as Lightning, Shield
 } from "lucide-react";
 import {
   calculateCableSection,
@@ -489,7 +489,7 @@ export default function CableCheckerTab() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <ResultDisplay
               label="Section calculee"
-              value={result.sectionMin.toFixed(2)}
+              value={String(result.sectionMin.toFixed(2))}
               unit="mm2"
               sub={`rho = ${result.rho} Ohm.mm2/m`}
               status="neutral"
@@ -497,7 +497,7 @@ export default function CableCheckerTab() {
             />
             <ResultDisplay
               label="Section recommandee"
-              value={result.sectionCommercial}
+              value={String(result.sectionCommercial)}
               unit="mm2"
               sub="Normalisee comercial"
               status={globalOk ? "ok" : "danger"}
@@ -505,7 +505,7 @@ export default function CableCheckerTab() {
             />
             <ResultDisplay
               label="Pertes resistives"
-              value={result.powerLoss.toFixed(2)}
+              value={String(result.powerLoss.toFixed(2))}
               unit="W"
               sub="P = rho x 2L x I2 / S"
               status={result.powerLoss < 5 ? "ok" : result.powerLoss < 10 ? "warning" : "danger"}
@@ -557,13 +557,6 @@ export default function CableCheckerTab() {
             <Progress 
               value={Math.min(result.deltaVPercent, 10) * 10} 
               className="h-2"
-              indicatorClassName={
-                result.voltageDropStatus === "ok"
-                  ? "bg-green-500"
-                  : result.voltageDropStatus === "acceptable"
-                    ? "bg-amber-500"
-                    : "bg-red-500"
-              }
             />
           </div>
 
