@@ -86,10 +86,9 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
   const autonomy = results[0]?.params.autonomy ?? 5;
   const dod = results[0]?.params.dod ?? 0.8;
   const batteryEff = results[0]?.params.batteryEfficiency ?? 0.85;
-// Capacité unitaire batterie selon le site (BVS1 = 1275 Ah, BVS2 & TA = 1515 Ah)
-const unitaryCap = 
-  result.siteId === "BVS1" ? 1275 : 1515;  
-  // Dynamic PSH label - show (pire mois) for low values, (moyenne) for higher values
+  // Capacité unitaire batterie selon le site (BVS1 = 1275 Ah, BVS2 & TA = 1515 Ah)
+  const firstSiteId = results[0]?.siteId ?? "BVS1";
+  const unitaryCap = firstSiteId === "BVS1" ? 1275 : 1515;
   const pshLabel = psh <= 5.0 ? "(pire mois)" : "(moyenne)";
 
   const basis = [
@@ -102,7 +101,8 @@ const unitaryCap =
     ["Autonomie Batterie", `${autonomy} jours`],
     ["Profondeur de Décharge (DOD)", `${dod * 100}%`],
     ["Rendement Batterie", `${batteryEff * 100}%`],
-["Capacité Unitaire Batterie", result.siteId === "BVS1" ? "1275 Ah (BVS1)" : "1515 Ah (BVS2 & TA)"],    ["Référence Normative", "IEC 61215, IEC 62259, IEEE 1115 et UTE C15-712-2"],
+["Capacité Unitaire Batterie", firstSiteId === "BVS1" ? "1275 Ah (BVS1)" : "1515 Ah (BVS2 & TA)"],
+    ["Référence Normative", "IEC 61215, IEC 62259, IEEE 1115 et UTE C15-712-2"],
   ];
 
   autoTable(doc, {
