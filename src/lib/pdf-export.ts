@@ -144,7 +144,7 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
     doc.text(`-  ${formula}:`, margin, y);
     doc.setTextColor(...GRAY);
     doc.text(calc, margin + 75, y);
-    y += 6;
+    y += 12;
   });
   y += 5;
 
@@ -346,10 +346,10 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
     doc.setFontSize(12);
     doc.setTextColor(...DARK);
     doc.text("4. RÉCAPITULATIF GLOBAL", margin, y);
-    y += 7;
+    y += 15;
     doc.setDrawColor(...BRAND_ORANGE);
     doc.line(margin, y, pageW - margin, y);
-    y += 3;
+    y += 8;
 
     autoTable(doc, {
       startY: y,
@@ -379,10 +379,10 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
   doc.setFontSize(12);
   doc.setTextColor(...DARK);
   doc.text("5. VERIFICATION CABLES PV - PAR SITE", margin, y);
-  y += 7;
+  y += 15;
   doc.setDrawColor(...BRAND_ORANGE);
   doc.line(margin, y, pageW - margin, y);
-  y += 8;
+  y += 15;
   
   // Parametres fixes pour le calcul Cable (comme SiteCableChecker)
   const RHO_CU = 0.02314;
@@ -489,7 +489,7 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
     doc.setFontSize(9);
     doc.setTextColor(...DARK);
     doc.text(`Chute de tension totale (Module -> Armoire): ${totalDv.toFixed(2)}%`, margin, y);
-    y += 10;
+    y += 15;
   }
   
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -501,10 +501,10 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
   doc.setFontSize(12);
   doc.setTextColor(...DARK);
   doc.text("6. COMPATIBILITE MPPT - PAR SITE", margin, y);
-  y += 7;
+  y += 15;
   doc.setDrawColor(...BRAND_ORANGE);
   doc.line(margin, y, pageW - margin, y);
-  y += 8;
+  y += 15;
   
   const VOC_DEF = 41.78;
   const ISC_DEF = 14.07;
@@ -568,7 +568,7 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
       },
       margin: { left: margin, right: margin },
     });
-    y = ((doc as unknown) as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+    y = ((doc as unknown) as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
   }
 
   // ── Pied de page sur toutes les pages ──────────────────────────────────────
@@ -881,12 +881,12 @@ export function generateCablePDF(input: CableCheckerInput, result: CableCheckerR
   doc.setFontSize(11);
   doc.setTextColor(...BRAND_ORANGE);
   doc.text("Formule GATECH : S = (ρ × 2 × L × I) / (ε × U)", margin, y);
-  y += 6;
+  y += 12;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(...GRAY);
   doc.text(`ρ = ${result.rho} Ω·mm²/m (${input.conductorType === "copper" ? "Cuivre" : "Aluminium"} à ${input.ambientTemp}°C) | ε = ${input.maxVoltageDrop}% | L = ${input.cableLength} m | U = ${input.systemVoltage} V`, margin, y);
-  y += 10;
+  y += 15;
 
   // Paramètres d'entrée
   doc.setFont("helvetica", "bold");
@@ -1016,7 +1016,7 @@ export function generateMpptPDF(input: GatechMpptInput, result: GatechMpptResult
   doc.setFontSize(10);
   doc.setTextColor(...BRAND_ORANGE);
   doc.text(`Critères GATECH : Vstring = Voc × ${input.kVoc} × Ns ≤ ${specs.vmaxInput} V  |  Itotal = Isc × ${input.kIsc} × Np ≤ ${specs.imaxInput} A`, margin, y);
-  y += 10;
+  y += 15;
 
   // Paramètres
   doc.setFont("helvetica", "bold");
@@ -1175,21 +1175,21 @@ export function generateFullReport(
   doc.setTextColor(...DARK);
   doc.setFontSize(10);
   doc.text(`Section minimum: ${cableResult.sectionMin.toFixed(2)} mm²`, margin, y);
-  y += 6;
+  y += 12;
   doc.text(`Section recommandee (juste au-dessus): ${cableResult.sectionCommercial} mm²`, margin, y);
-  y += 6;
+  y += 12;
   doc.text(`Chute de tension: ${cableResult.deltaVPercent.toFixed(2)}% (${cableResult.deltaVReal.toFixed(3)} V)`, margin, y);
-  y += 6;
+  y += 12;
   doc.text(`Pertes: ${cableResult.powerLoss.toFixed(2)} W`, margin, y);
-  y += 6;
+  y += 12;
   doc.text(`Courant Iz: ${cableResult.iz} A @ ${cableInput.ambientTemp}°C`, margin, y);
-  y += 6;
+  y += 12;
   
   const cableOk = cableResult.izStatus === "ok" && cableResult.voltageDropStatus !== "danger";
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(cableOk ? 34 : 220, cableOk ? 197 : 38, cableOk ? 94 : 38);
-  y += 6;
+  y += 12;
   doc.text(cableOk ? "CONFORME" : "NON CONFORME", margin, y);
   y += 15;
   
