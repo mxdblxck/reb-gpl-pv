@@ -3,7 +3,7 @@
  * Voc_max = Voc × Ns × 1.15 → si > 200V : DESTRUCTION MPPT IMMINENTE
  * Isc_max = Isc × Np × 1.25 → si > I_limit : SURCHARGE RÉGULATEUR
  */
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
@@ -13,13 +13,13 @@ import { CheckCircle2, XCircle, AlertTriangle, Cpu, RefreshCw, Zap } from "lucid
 import type { SiteResult, GatechMpptModel } from "@/lib/solar-calc.ts";
 import { GATECH_MPPT_SPECS } from "@/lib/solar-calc.ts";
 
-// Paramètres Jinko 555 Wp Tiger Neo (STC)
-const VOC_DEF = 41.78;
-const ISC_DEF = 14.07;
+// Paramètres Jinko 555 Wp Tiger Neo (STC) — Document GATECH
+const VOC_DEF = 50.34; // V — Voc STC
+const ISC_DEF = 14.07; // A
 
-// Coefficients de sécurité
-const K_VOC = 1.15; // correction température froide (nuit désert)
-const K_ISC = 1.25; // marge sécurité courant (IEC 62548)
+// Coefficients de sécurité GATECH
+const K_VOC = 1.14;   // correction température froide (nuit désert)
+const K_ISC = 1.25;  // marge sécurité courant (IEC 62548)
 const V_MAX_MPPT = 200; // V — limite absolue Morning Star
 
 // MPPT fixe par site (étude REB GPL)
@@ -37,7 +37,8 @@ export default function SiteMpptChecker({ result }: Props) {
   const ns = pv.seriesPerGroup;
   // Modèle fixe selon le site — pas de sélecteur
   const model: GatechMpptModel = SITE_MPPT[result.siteId] ?? "GS-MPPT-100M";
-  const np = pv.parallelStrings * params.groups;
+  // Np par groupe/MPPT indépendant (TA: 2 groupes avec MPPT indép.)
+  const np = pv.parallelStrings;
 
   const [voc, setVoc] = useState(VOC_DEF);
   const [isc, setIsc] = useState(ISC_DEF);
@@ -46,20 +47,22 @@ export default function SiteMpptChecker({ result }: Props) {
 
   const specs = GATECH_MPPT_SPECS[model];
 
-  const vocMax = useMemo(() => voc * ns * K_VOC, [voc, ns]);
-  const iscMax = useMemo(() => isc * np * K_ISC, [isc, np]);
+  // Correction tension et courant par module
+  const vocCorrige = voc * K_VOC;  // Voc d'un module corrigé
+  const iscCorrige = isc * K_ISC;  // Isc d'une chaîne corrigé
 
-  const vocOk = vocMax <= V_MAX_MPPT;
-  const iscOk = iscMax <= specs.imaxInput;
+  // Ns max et Np max autorisés (GATECH correct)
+  const nsMax = Math.floor(specs.vmaxInput / vocCorrige);
+  const npMax = Math.floor(specs.imaxInput / iscCorrige);
 
-  const vocPct = (vocMax / V_MAX_MPPT) * 100;
-  const iscPct = (iscMax / specs.imaxInput) * 100;
+  // Vérifications
+  const vocOk = ns <= nsMax;
+  const iscOk = np <= npMax;
+
+  const vocPct = (ns / nsMax) * 100;
+  const iscPct = (np / npMax) * 100;
 
   const globalOk = vocOk && iscOk;
-
-  // Ns max et Np max autorisés
-  const nsMax = Math.floor(V_MAX_MPPT / (voc * K_VOC));
-  const npMax = Math.floor(specs.imaxInput / (isc * K_ISC));
 
   return (
     <Card className="border-primary/20">
@@ -97,7 +100,8 @@ export default function SiteMpptChecker({ result }: Props) {
             <span>Vmax = {specs.vmaxInput} V | Imax = {specs.imaxInput} A</span>
           </div>
           <p className="text-[10px] font-mono text-primary">
-            Voc_max = Voc × Ns × {K_VOC} &nbsp;|&nbsp; Isc_max = Isc × Np × {K_ISC}
+            Voc_corrigé = Voc × {K_VOC} = {vocCorrige.toFixed(2)} V&nbsp;|&nbsp;
+            Isc_corrigé = Isc × {K_ISC} = {iscCorrige.toFixed(2)} A
           </p>
         </div>
 
@@ -126,14 +130,14 @@ export default function SiteMpptChecker({ result }: Props) {
         {/* Alerte tension */}
         <AlertCard
           label="Vérification Tension"
-          formula={`Voc_max = ${voc} × ${ns} × ${K_VOC} = ${vocMax.toFixed(2)} V`}
-          calculated={vocMax}
-          limit={V_MAX_MPPT}
+          formula={`Voc_corrigé × Ns = ${vocCorrige.toFixed(2)} × ${ns} = ${(vocCorrige * ns).toFixed(2)} V`}
+          calculated={vocCorrige * ns}
+          limit={specs.vmaxInput}
           unit="V"
           pct={vocPct}
           ok={vocOk}
-          dangerMsg="🔴 DESTRUCTION MPPT IMMINENTE — Voc_max dépasse la limite absolue"
-          okMsg={`✅ Tension compatible — marge ${(V_MAX_MPPT - vocMax).toFixed(1)} V`}
+          dangerMsg="🔴 DESTRUCTION MPPT IMMINENTE — Voc dépasse la limite"
+          okMsg={`✅ Tension compatible — marge ${(specs.vmaxInput - vocCorrige * ns).toFixed(1)} V`}
           nsMax={nsMax}
           showNsMax
         />
@@ -141,14 +145,14 @@ export default function SiteMpptChecker({ result }: Props) {
         {/* Alerte courant */}
         <AlertCard
           label="Vérification Courant"
-          formula={`Isc_max = ${isc} × ${np} × ${K_ISC} = ${iscMax.toFixed(2)} A`}
-          calculated={iscMax}
+          formula={`Isc_corrigé × Np = ${iscCorrige.toFixed(2)} × ${np} = ${(iscCorrige * np).toFixed(2)} A`}
+          calculated={iscCorrige * np}
           limit={specs.imaxInput}
           unit="A"
           pct={iscPct}
           ok={iscOk}
-          dangerMsg="🔴 SURCHARGE RÉGULATEUR — Isc_max dépasse la capacité du MPPT"
-          okMsg={`✅ Courant compatible — marge ${(specs.imaxInput - iscMax).toFixed(1)} A`}
+          dangerMsg="🔴 SURCHARGE RÉGULATEUR — Isc dépasse la capacité"
+          okMsg={`✅ Courant compatible — marge ${(specs.imaxInput - iscCorrige * np).toFixed(1)} A`}
           npMax={npMax}
           showNpMax
         />
@@ -161,7 +165,7 @@ export default function SiteMpptChecker({ result }: Props) {
               {nsMax}
             </p>
             <p className="text-[9px] font-mono text-muted-foreground">
-              floor({V_MAX_MPPT} / ({voc} × {K_VOC}))
+              floor({specs.vmaxInput} / {vocCorrige.toFixed(2)})
             </p>
           </div>
           <div className="rounded-lg border border-border bg-muted/10 px-3 py-2">
@@ -170,7 +174,7 @@ export default function SiteMpptChecker({ result }: Props) {
               {npMax}
             </p>
             <p className="text-[9px] font-mono text-muted-foreground">
-              floor({specs.imaxInput} / ({isc} × {K_ISC}))
+              floor({specs.imaxInput} / {iscCorrige.toFixed(2)})
             </p>
           </div>
         </div>
