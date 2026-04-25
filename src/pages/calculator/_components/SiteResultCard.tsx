@@ -1,13 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
-import { Sun, Battery, Zap, Clock, BookOpen } from "lucide-react";
+import { Sun, Battery, Zap, Clock } from "lucide-react";
 import type { SiteResult } from "@/lib/solar-calc.ts";
 import {
   formatWp,
   formatWh,
   formatAh,
   calculateRecharge,
-  SITE_DETAIL_CONFIGS,
 } from "@/lib/solar-calc.ts";
 import SiteCableChecker from "./SiteCableChecker.tsx";
 import SiteMpptChecker from "./SiteMpptChecker.tsx";
@@ -214,9 +213,6 @@ export default function SiteResultCard({ result }: Props) {
         </Card>
       </div>
 
-      {/* ── Étude de Détails Suggérée ── */}
-      <DetailStudyCard siteId={result.siteId} result={result} />
-
       {/* ── Temps de Recharge des Batteries ── */}
       <RechargeTimeCard result={result} />
 
@@ -226,97 +222,6 @@ export default function SiteResultCard({ result }: Props) {
       {/* ── Compatibilité MPPT ── */}
       <SiteMpptChecker result={result} />
     </div>
-  );
-}
-
-// ── Étude de Détails Suggérée ─────────────────────────────────────────────────
-
-function DetailStudyCard({ siteId, result }: { siteId: string; result: SiteResult }) {
-  const config = SITE_DETAIL_CONFIGS[siteId]; // Gardé pour batterie (statique)
-  if (!config) return null;
-
-  const { pv, params } = result;
-
-  return (
-    <Card className="border-amber-400/40 bg-amber-50/40">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <div className="w-7 h-7 bg-amber-500/15 rounded-md flex items-center justify-center">
-            <BookOpen className="w-4 h-4 text-amber-600" />
-          </div>
-          <span className="text-amber-800">Étude de Détails Suggérée</span>
-          <Badge className="ml-auto text-[10px] bg-amber-500/10 text-amber-700 border-amber-300">
-            Référence
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Config PV — Dynamique depuis result.pv */}
-          <div className="space-y-2">
-            <p className="text-[11px] font-semibold text-amber-700 uppercase tracking-wide">
-              Système Photovoltaïque
-            </p>
-            <div className="rounded-lg border border-amber-300/50 bg-background p-3 space-y-1.5">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Configuration</span>
-                <span className="font-bold text-primary">{pv.configLabel}</span>
-              </div>
-              {params.groups > 1 && (
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">Groupes (MPPT indép.)</span>
-                  <span className="font-medium text-foreground">{params.groups}G</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Modules en série</span>
-                <span className="font-medium text-foreground">{pv.seriesPerGroup}S</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Strings en parallèle</span>
-                <span className="font-medium text-foreground">{pv.parallelStrings}P</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Nombre de modules</span>
-                <span className="font-medium text-foreground">{pv.totalModules} modules</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Puissance installée</span>
-                <span className="font-medium text-foreground">{formatWp(pv.actualPvPower)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Config Batterie — Statique depuis config */}
-          <div className="space-y-2">
-            <p className="text-[11px] font-semibold text-amber-700 uppercase tracking-wide">
-              Banc de Batteries Ni-Cad
-            </p>
-            <div className="rounded-lg border border-amber-300/50 bg-background p-3 space-y-1.5">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Configuration</span>
-                <span className="font-bold text-primary">{config.battLabel}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Cellules en série</span>
-                <span className="font-medium text-foreground">{config.battSeries} cellules (48V)</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Branches parallèles</span>
-                <span className="font-medium text-foreground">{config.battParallel}P</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Capacité totale</span>
-                <span className="font-semibold text-primary">{formatAh(config.battTotalAh)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <p className="text-[11px] text-amber-700/70 mt-3">
-          Configuration issue de l'étude de détails REB GPL Line — à valider avec les charges réelles de chaque site.
-        </p>
-      </CardContent>
-    </Card>
   );
 }
 

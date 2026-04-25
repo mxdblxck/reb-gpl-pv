@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { Switch } from "@/components/ui/switch.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
@@ -13,6 +13,7 @@ import SiteParamsForm from "@/pages/calculator/_components/SiteParamsForm.tsx";
 import SiteResultCard from "@/pages/calculator/_components/SiteResultCard.tsx";
 import EnergyCharts from "@/pages/calculator/_components/EnergyCharts.tsx";
 import EnergyLoadInput from "@/pages/calculator/_components/EnergyLoadInput.tsx";
+import AnimatedBackground from "@/pages/calculator/_components/AnimatedBackground.tsx";
 import type { SiteParams, SiteResult } from "@/lib/solar-calc.ts";
 import { SITES, getDefaultSiteParams, calculateSite, getSiteFullName } from "@/lib/solar-calc.ts";
 import { generateSizingPDF, generateExcel } from "@/lib/pdf-export.ts";
@@ -163,6 +164,9 @@ export default function ProjectPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Animated background */}
+      <AnimatedBackground />
+
       {/* En-tête */}
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-sm border-b border-border">
         <div className="max-w-6xl mx-auto px-2 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-3">
@@ -484,9 +488,25 @@ export default function ProjectPage() {
           </TabsContent>
         </Tabs>
 
-        {results.length > 0 && <EnergyCharts results={results} />}
+        {/* Divider */}
+        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent my-6" />
 
-        {results.length > 1 && (
+        {/* Section: Energy Charts */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
+          {results.length > 0 && <EnergyCharts results={results} />}
+        </motion.div>
+
+        {/* Section: Summary Table */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
+          {results.length > 1 && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Récapitulatif de Tous les Sites</CardTitle>
@@ -521,8 +541,15 @@ export default function ProjectPage() {
             </CardContent>
           </Card>
         )}
+        </motion.div>
 
-        {project?.notes && (
+        {/* Section: Project Notes */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
+          {project?.notes && (
           <Card>
             <CardHeader>
               <CardTitle className="text-sm text-muted-foreground">Notes d'Ingénierie</CardTitle>
@@ -532,6 +559,7 @@ export default function ProjectPage() {
             </CardContent>
           </Card>
         )}
+        </motion.div>
       </div>
     </div>
   );
