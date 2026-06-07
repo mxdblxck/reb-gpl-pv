@@ -312,7 +312,7 @@ export default function ProjectPage() {
               <div className="w-7 h-7 bg-primary/10 rounded-md flex items-center justify-center">
                 <SunMedium className="w-4 h-4 text-primary" />
               </div>
-              Panneau PV — Commun aux 3 sites
+              Panneau PV
               <Badge className="ml-auto text-[10px] bg-primary/10 text-primary border-primary/20">
                 BVS1 · BVS2 · TA
               </Badge>
@@ -332,7 +332,7 @@ export default function ProjectPage() {
                     {m.brand} — {m.model} ({m.pmax} Wp)
                   </option>
                 ))}
-                <option value="custom">✏️ Saisie manuelle (panneau personnalisé)</option>
+                <option value="custom"> Saisie manuelle (autre panneau)</option>
               </select>
             </div>
 
