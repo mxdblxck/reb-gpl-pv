@@ -3,12 +3,89 @@
 
 export type SiteId = "BVS1" | "BVS2" | "TA";
 
+// ── PV Module Catalog ─────────────────────────────────────────────────────────
+
+export type PvModule = {
+  id: string;
+  brand: string;
+  model: string;
+  technology: string;        // e.g. "N-type TOPCon", "Mono-PERC"
+  pmax: number;              // Wp  — STC
+  vmp: number;               // V   — STC
+  imp: number;               // A   — STC
+  voc: number;               // V   — STC
+  isc: number;               // A   — STC
+  efficiency: number;        // %   — e.g. 21.48
+  tempCoeffPmax: number;     // %/°C — e.g. -0.30
+  dimensions: [number, number, number]; // mm [L, W, H]
+  weight: number;            // kg
+};
+
+/** Central catalog — add new panels here, they appear automatically everywhere */
+export const PV_MODULES: Record<string, PvModule> = {
+  "jinko-555": {
+    id: "jinko-555",
+    brand: "Jinko Solar",
+    model: "Tiger Neo JKM555N-72HL4-V",
+    technology: "N-type Mono-PERC",
+    pmax: 555,
+    vmp: 41.64,
+    imp: 13.33,
+    voc: 50.34,
+    isc: 14.07,
+    efficiency: 21.48,
+    tempCoeffPmax: -0.30,
+    dimensions: [2278, 1134, 35],
+    weight: 28,
+  },
+  "condor-620": {
+    id: "condor-620",
+    brand: "Condor",
+    model: "CEM620M-156",
+    technology: "N-type TOPCon",
+    pmax: 620,
+    vmp: 45.19,
+    imp: 13.52,
+    voc: 55.37,
+    isc: 14.34,
+    efficiency: 22.81,
+    tempCoeffPmax: -0.29,
+    dimensions: [2465, 1134, 35],
+    weight: 30,
+  },
+  /** Sentinel entry — user fills in all values manually in the form */
+  "custom": {
+    id: "custom",
+    brand: "Personnalisé",
+    model: "Saisie manuelle",
+    technology: "—",
+    pmax: 400,
+    vmp: 40.0,
+    imp: 10.0,
+    voc: 48.0,
+    isc: 10.5,
+    efficiency: 20.0,
+    tempCoeffPmax: -0.30,
+    dimensions: [2000, 1000, 35],
+    weight: 25,
+  },
+};
+
+export const DEFAULT_MODULE_ID = "jinko-555";
+
 export type SiteParams = {
   siteId: string;
   energyLoad: number; // Wh/day
   psh: number; // Peak Sun Hours (default 4.95 h – worst month REB)
   pr: number; // Performance Ratio (default 0.72)
-  modulePower: number; // Wp per module (default 555 Wp Jinko)
+  modulePower: number; // Wp per module (synced from selected module)
+  moduleId: string;   // Key into PV_MODULES catalog (use "custom" for manual entry)
+  moduleName: string; // Display name — auto-filled from catalog or user-entered for custom
+  // Electrical module params (synced from catalog on module change)
+  moduleVmp: number;  // V — Vmpp STC
+  moduleImp: number;  // A — Impp STC
+  moduleVoc: number;  // V — Voc STC
+  moduleIsc: number;  // A — Isc STC
   groups: number; // Number of parallel PV groups (1 for BVS1/BVS2, 2 for TA)
   autonomy: number; // Battery autonomy in days (default 5)
   dod: number; // Depth of Discharge (default 0.8 Ni-Cad)
@@ -163,14 +240,20 @@ export function calculateSite(
  */
 export function getDefaultSiteParams(siteId: string): SiteParams {
   const groups = siteId === "TA" ? 2 : 1;
-  // Site-specific unitary battery capacity
   const unitaryBatteryCapacity = siteId === "BVS1" ? 1275 : 1515;
+  const mod = PV_MODULES[DEFAULT_MODULE_ID];
   return {
     siteId,
     energyLoad: 0,
     psh: 5.2,
     pr: 0.72,
-    modulePower: 555,
+    modulePower: mod.pmax,
+    moduleId: DEFAULT_MODULE_ID,
+    moduleName: `${mod.brand} ${mod.model}`,
+    moduleVmp: mod.vmp,
+    moduleImp: mod.imp,
+    moduleVoc: mod.voc,
+    moduleIsc: mod.isc,
     groups,
     autonomy: 5,
     dod: 0.8,
@@ -178,7 +261,7 @@ export function getDefaultSiteParams(siteId: string): SiteParams {
     cellVoltage: 1.2,
     unitaryBatteryCapacity,
     systemVoltage: 48,
-    margin: 0, // Default: no safety margin (user can add in detailed view)
+    margin: 0,
   };
 }
 

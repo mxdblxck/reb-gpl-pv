@@ -8,14 +8,16 @@ import { motion, AnimatePresence } from "motion/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { Switch } from "@/components/ui/switch.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
-import { Sun, Save, FileSpreadsheet, FileText, Info, AlertCircle, Shield } from "lucide-react";
+import { Badge } from "@/components/ui/badge.tsx";
+import { Sun, Save, FileSpreadsheet, FileText, Info, AlertCircle, Shield, SunMedium, Zap, Ruler, PencilLine } from "lucide-react";
+import { Label } from "@/components/ui/label.tsx";
 import SiteParamsForm from "@/pages/calculator/_components/SiteParamsForm.tsx";
 import SiteResultCard from "@/pages/calculator/_components/SiteResultCard.tsx";
 import EnergyCharts from "@/pages/calculator/_components/EnergyCharts.tsx";
 import EnergyLoadInput from "@/pages/calculator/_components/EnergyLoadInput.tsx";
 import AnimatedBackground from "@/pages/calculator/_components/AnimatedBackground.tsx";
 import type { SiteParams, SiteResult } from "@/lib/solar-calc.ts";
-import { SITES, getDefaultSiteParams, calculateSite, getSiteFullName } from "@/lib/solar-calc.ts";
+import { SITES, getDefaultSiteParams, calculateSite, getSiteFullName, PV_MODULES } from "@/lib/solar-calc.ts";
 import { generateSizingPDF, generateExcel } from "@/lib/pdf-export.ts";
 
 // Local storage types
@@ -96,6 +98,50 @@ export default function ProjectPage() {
   const handleParamsChange = (siteId: string, updated: SiteParams) => {
     setSiteParams((prev) => ({ ...prev, [siteId]: updated }));
   };
+
+  /** Apply a module change (moduleId + all electrical fields) to every site at once */
+  const handleGlobalModuleChange = (moduleId: string, customName?: string) => {
+    if (moduleId === "custom") {
+      setSiteParams((prev) =>
+        Object.fromEntries(
+          SITES.map((sid) => [sid, { ...prev[sid], moduleId: "custom", moduleName: customName ?? prev[sid].moduleName ?? "Panneau personnalisé" }])
+        )
+      );
+      return;
+    }
+    const mod = PV_MODULES[moduleId];
+    if (!mod) return;
+    setSiteParams((prev) =>
+      Object.fromEntries(
+        SITES.map((sid) => [
+          sid,
+          {
+            ...prev[sid],
+            moduleId,
+            moduleName: `${mod.brand} ${mod.model}`,
+            modulePower: mod.pmax,
+            moduleVmp: mod.vmp,
+            moduleImp: mod.imp,
+            moduleVoc: mod.voc,
+            moduleIsc: mod.isc,
+          },
+        ])
+      )
+    );
+  };
+
+  /** Update a single custom field across all sites */
+  const handleGlobalCustomField = (key: keyof SiteParams, value: number) => {
+    setSiteParams((prev) =>
+      Object.fromEntries(SITES.map((sid) => [sid, { ...prev[sid], [key]: value }]))
+    );
+  };
+
+  /** The shared module state — read from BVS1 (all sites are always in sync) */
+  const sharedModuleId = siteParams["BVS1"]?.moduleId ?? "jinko-555";
+  const sharedModuleName = siteParams["BVS1"]?.moduleName ?? "";
+  const isCustomModule = sharedModuleId === "custom";
+  const catalogModule = !isCustomModule ? (PV_MODULES[sharedModuleId] ?? PV_MODULES["jinko-555"]) : null;
 
   const handleSave = () => {
     setIsSaving(true);
@@ -256,6 +302,136 @@ export default function ProjectPage() {
                 />
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* ── Global Panel Selector (applies to all 3 sites) ──────────── */}
+        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <div className="w-7 h-7 bg-primary/10 rounded-md flex items-center justify-center">
+                <SunMedium className="w-4 h-4 text-primary" />
+              </div>
+              Panneau PV — Commun aux 3 sites
+              <Badge className="ml-auto text-[10px] bg-primary/10 text-primary border-primary/20">
+                BVS1 · BVS2 · TA
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 pt-0">
+            {/* Dropdown */}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Modèle de panneau</Label>
+              <select
+                value={sharedModuleId}
+                onChange={(e) => handleGlobalModuleChange(e.target.value)}
+                className="w-full h-9 text-sm rounded-md border border-input bg-background px-3 font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                {Object.values(PV_MODULES).filter((m) => m.id !== "custom").map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.brand} — {m.model} ({m.pmax} Wp)
+                  </option>
+                ))}
+                <option value="custom">✏️ Saisie manuelle (panneau personnalisé)</option>
+              </select>
+            </div>
+
+            {/* Catalog panel specs */}
+            {!isCustomModule && catalogModule && (
+              <div className="rounded-lg border border-primary/20 bg-background/60 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-foreground">{catalogModule.brand}</p>
+                    <p className="text-[11px] text-muted-foreground">{catalogModule.model}</p>
+                  </div>
+                  <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                    {catalogModule.technology}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                  {[
+                    { label: "Pmax", value: `${catalogModule.pmax} Wp` },
+                    { label: "Vmp",  value: `${catalogModule.vmp} V`   },
+                    { label: "Imp",  value: `${catalogModule.imp} A`   },
+                    { label: "Voc",  value: `${catalogModule.voc} V`   },
+                    { label: "Isc",  value: `${catalogModule.isc} A`   },
+                    { label: "η",    value: `${catalogModule.efficiency}%` },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="rounded-md bg-muted/30 px-2 py-1.5 text-center">
+                      <p className="text-[9px] text-muted-foreground font-medium">{label}</p>
+                      <p className="text-[11px] font-bold text-foreground font-mono">{value}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap items-center gap-3 pt-0.5 border-t border-border/40">
+                  <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <Ruler className="w-3 h-3" />
+                    {catalogModule.dimensions[0]} × {catalogModule.dimensions[1]} × {catalogModule.dimensions[2]} mm
+                  </span>
+                  <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <Zap className="w-3 h-3" />
+                    {catalogModule.weight} kg
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">{catalogModule.tempCoeffPmax} %/°C</span>
+                </div>
+              </div>
+            )}
+
+            {/* Custom panel manual form */}
+            {isCustomModule && (
+              <div className="rounded-lg border-2 border-dashed border-amber-400/50 bg-amber-50/10 p-3 space-y-3">
+                <div className="flex items-center gap-2">
+                  <PencilLine className="w-3.5 h-3.5 text-amber-600" />
+                  <span className="text-xs font-semibold text-amber-700">Panneau personnalisé — saisie manuelle</span>
+                </div>
+                {/* Panel name */}
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Nom / Référence</Label>
+                  <input
+                    className="w-full h-8 text-sm rounded-md border border-input bg-background px-3 text-foreground"
+                    value={sharedModuleName}
+                    onChange={(e) =>
+                      setSiteParams((prev) =>
+                        Object.fromEntries(SITES.map((sid) => [sid, { ...prev[sid], moduleName: e.target.value }]))
+                      )
+                    }
+                    placeholder="ex: Longi Hi-MO6 580W"
+                  />
+                </div>
+                {/* Electrical fields */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                  {(
+                    [
+                      { key: "modulePower" as keyof SiteParams, label: "Pmax", unit: "Wp", step: 1 },
+                      { key: "moduleVmp"   as keyof SiteParams, label: "Vmp",  unit: "V",  step: 0.01 },
+                      { key: "moduleImp"   as keyof SiteParams, label: "Imp",  unit: "A",  step: 0.01 },
+                      { key: "moduleVoc"   as keyof SiteParams, label: "Voc",  unit: "V",  step: 0.01 },
+                      { key: "moduleIsc"   as keyof SiteParams, label: "Isc",  unit: "A",  step: 0.01 },
+                    ]
+                  ).map((f) => (
+                    <div key={f.key} className="space-y-1">
+                      <Label className="text-[10px] text-muted-foreground">
+                        {f.label} <span className="text-primary/70">({f.unit})</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={f.step}
+                        value={siteParams["BVS1"]?.[f.key] as number ?? 0}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value);
+                          if (!isNaN(v)) handleGlobalCustomField(f.key, v);
+                        }}
+                        className="h-8 text-sm font-mono"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Ces valeurs sont appliquées aux 3 sites (câblage, MPPT, dimensionnement).
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

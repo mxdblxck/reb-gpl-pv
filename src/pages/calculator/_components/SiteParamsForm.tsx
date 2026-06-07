@@ -26,126 +26,40 @@ type FieldDef = {
   tooltip: string;
 };
 
-const fields: FieldDef[] = [
-  {
-    key: "psh",
-    label: "PSH (Heures de Soleil Crête)",
-    unit: "h/j",
-    min: 0.1,
-    step: 0.01,
-    tooltip: "Heures de soleil crête pire mois pour REB : 4.95 h",
-  },
-  {
-    key: "pr",
-    label: "Rendement Système (PR)",
-    unit: "",
-    min: 0.1,
-    step: 0.01,
-    tooltip: "Facteur de pertes système — 0.72 conservateur",
-  },
-  {
-    key: "modulePower",
-    label: "Puissance Module",
-    unit: "Wp",
-    min: 1,
-    step: 1,
-    tooltip: "Puissance nominale du module PV — Jinko 555 Wp",
-  },
-  {
-    key: "groups",
-    label: "Groupes PV",
-    unit: "",
-    min: 1,
-    step: 1,
-    tooltip: "Groupes PV en parallèle (1 pour BVS1/BVS2, 2 pour TA)",
-  },
-  {
-    key: "autonomy",
-    label: "Autonomie Batterie",
-    unit: "jours",
-    min: 1,
-    step: 1,
-    tooltip: "Jours d'autonomie sans apport solaire",
-  },
-  {
-    key: "dod",
-    label: "DOD (Profondeur de Décharge)",
-    unit: "",
-    min: 0.1,
-    step: 0.01,
-    tooltip: "Fraction de décharge maximale — 0.8 pour Ni-Cad",
-  },
-  {
-    key: "batteryEfficiency",
-    label: "Rendement Batterie (η)",
-    unit: "",
-    min: 0.1,
-    step: 0.01,
-    tooltip: "Rendement charge/décharge — 0.85",
-  },
-  {
-    key: "cellVoltage",
-    label: "Tension Cellule",
-    unit: "V",
-    min: 0.1,
-    step: 0.01,
-    tooltip: "Tension nominale de cellule — 1.2 V Ni-Cad",
-  },
-  {
-    key: "unitaryBatteryCapacity",
-    label: "Capacité Unitaire de Batterie",
-    unit: "Ah",
-    min: 1,
-    step: 1,
-    tooltip: "Capacité d'une unité de batterie — 1275 Ah",
-  },
-  {
-    key: "systemVoltage",
-    label: "Tension Système",
-    unit: "V",
-    min: 12,
-    step: 12,
-    tooltip: "Tension bus DC — 48 V pour tous les sites",
-  },
-  {
-    key: "margin",
-    label: "Marge (%)",
-    unit: "%",
-    min: 0,
-    max: 100,
-    step: 5,
-    tooltip: "Marge de sécurité en pourcentage — 20% par défaut",
-  },
+const systemFields: FieldDef[] = [
+  { key: "psh",                    label: "PSH",                   unit: "h/j",   min: 0.1, step: 0.01, tooltip: "Heures de soleil crête pire mois pour REB : 4.95 h" },
+  { key: "pr",                     label: "Rendement PR",          unit: "",      min: 0.1, step: 0.01, tooltip: "Facteur de pertes système — 0.72 conservateur" },
+  { key: "groups",                 label: "Groupes PV",            unit: "",      min: 1,   step: 1,    tooltip: "Groupes PV en parallèle (1 pour BVS1/BVS2, 2 pour TA)" },
+  { key: "autonomy",               label: "Autonomie",             unit: "jours", min: 1,   step: 1,    tooltip: "Jours d'autonomie sans apport solaire" },
+  { key: "dod",                    label: "DOD",                   unit: "",      min: 0.1, step: 0.01, tooltip: "Fraction de décharge maximale — 0.8 pour Ni-Cad" },
+  { key: "batteryEfficiency",      label: "Rendement Batt. η",     unit: "",      min: 0.1, step: 0.01, tooltip: "Rendement charge/décharge — 0.85" },
+  { key: "cellVoltage",            label: "Tension Cellule",       unit: "V",     min: 0.1, step: 0.01, tooltip: "Tension nominale de cellule — 1.2 V Ni-Cad" },
+  { key: "unitaryBatteryCapacity", label: "Cap. Unitaire Batt.",   unit: "Ah",    min: 1,   step: 1,    tooltip: "Capacité d'une unité de batterie — 1275 Ah" },
+  { key: "systemVoltage",          label: "Tension Système",       unit: "V",     min: 12,  step: 12,   tooltip: "Tension bus DC — 48 V pour tous les sites" },
+  { key: "margin",                 label: "Marge",                 unit: "%",     min: 0, max: 100, step: 5, tooltip: "Marge de sécurité en pourcentage" },
 ];
 
 export default function SiteParamsForm({ params, onChange }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
 
-  // Initialize input values from params
   const getInputValue = (key: string, defaultVal: number): string => {
     if (inputValues[key] !== undefined) return inputValues[key];
     return key === "margin" ? (defaultVal * 100).toString() : defaultVal.toString();
   };
 
   const handleChange = (key: keyof SiteParams, value: string) => {
-    // Store raw value in local state to allow free editing
     setInputValues((prev) => ({ ...prev, [key]: value }));
-    
     const num = parseFloat(value);
     if (!isNaN(num)) {
-      // Convert margin from percentage to decimal
       const finalValue = key === "margin" ? num / 100 : num;
       onChange({ ...params, [key]: finalValue });
     } else if (value === "") {
-      // Allow clearing the input
-      const finalValue = key === "margin" ? 0 : 0;
-      onChange({ ...params, [key]: finalValue });
+      onChange({ ...params, [key]: 0 });
     }
   };
 
   const handleBlur = (key: keyof SiteParams) => {
-    // Reset to current param value on blur
     setInputValues((prev) => {
       const newVals = { ...prev };
       delete newVals[key];
@@ -155,7 +69,18 @@ export default function SiteParamsForm({ params, onChange }: Props) {
 
   const handleReset = () => {
     const defaults = getDefaultSiteParams(params.siteId);
-    onChange({ ...defaults, energyLoad: params.energyLoad });
+    // Preserve module settings (managed globally) and energy load
+    onChange({
+      ...defaults,
+      energyLoad: params.energyLoad,
+      moduleId: params.moduleId,
+      moduleName: params.moduleName,
+      modulePower: params.modulePower,
+      moduleVmp: params.moduleVmp,
+      moduleImp: params.moduleImp,
+      moduleVoc: params.moduleVoc,
+      moduleIsc: params.moduleIsc,
+    });
   };
 
   return (
@@ -169,11 +94,7 @@ export default function SiteParamsForm({ params, onChange }: Props) {
             <Settings className="w-4 h-4" />
             Paramètres Avancés du Système
           </span>
-          {isOpen ? (
-            <ChevronUp className="w-4 h-4" />
-          ) : (
-            <ChevronDown className="w-4 h-4" />
-          )}
+          {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent>
@@ -181,7 +102,7 @@ export default function SiteParamsForm({ params, onChange }: Props) {
           <div className="flex items-center justify-between">
             <span className="text-sm font-bold text-foreground flex items-center gap-2">
               <Settings className="w-4 h-4 text-primary" />
-              Configuration Technique
+              Configuration Technique — {params.siteId}
             </span>
             <Button
               size="sm"
@@ -193,56 +114,35 @@ export default function SiteParamsForm({ params, onChange }: Props) {
             </Button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {fields.filter(f => f.key !== "margin").map((f) => (
+            {systemFields.filter((f) => f.key !== "margin").map((f) => (
               <div key={f.key} className="space-y-1.5 p-2 bg-background/50 rounded-lg border border-border/50">
                 <Label className="text-xs text-muted-foreground flex items-center gap-1">
                   {f.label}
-                  {f.unit && (
-                    <span className="text-primary/70">({f.unit})</span>
-                  )}
+                  {f.unit && <span className="text-primary/70">({f.unit})</span>}
                 </Label>
                 <div className="flex gap-1">
                   <Input
                     type="number"
                     step={f.step}
-                    // Remove spinner buttons with CSS, allow decimal points
                     style={{ WebkitAppearance: "textfield", MozAppearance: "textfield" }}
-                    // For margin, display as percentage (value * 100), but store as decimal
                     value={getInputValue(f.key, params[f.key] as number)}
                     onChange={(e) => handleChange(f.key, e.target.value)}
                     onBlur={() => handleBlur(f.key)}
                     className="h-8 text-sm no-spinner flex-1"
                     title={f.tooltip}
                   />
-                  {/* Preset buttons for PSH - 5.2 is default (moyen), 4.95 is worst case (pire mois) */}
                   {f.key === "psh" && (
                     <>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
+                      <Button type="button" variant="outline" size="sm"
                         className="h-8 text-xs px-2 text-muted-foreground hover:text-primary"
-                        onClick={() => {
-                          handleChange("psh", "5.2");
-                          onChange({ ...params, psh: 5.2 });
-                        }}
+                        onClick={() => { handleChange("psh", "5.2"); onChange({ ...params, psh: 5.2 }); }}
                         title="PSH moyen (défaut)"
-                      >
-                        5.2
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
+                      >5.2</Button>
+                      <Button type="button" variant="outline" size="sm"
                         className="h-8 text-xs px-2 text-muted-foreground hover:text-primary"
-                        onClick={() => {
-                          handleChange("psh", "4.95");
-                          onChange({ ...params, psh: 4.95 });
-                        }}
+                        onClick={() => { handleChange("psh", "4.95"); onChange({ ...params, psh: 4.95 }); }}
                         title="PSH pire mois"
-                      >
-                        4.95
-                      </Button>
+                      >4.95</Button>
                     </>
                   )}
                 </div>

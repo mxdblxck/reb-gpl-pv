@@ -105,10 +105,10 @@ export default function Index() {
             <div className="h-8 sm:h-10 w-px bg-border hidden sm:block" />
             <div className="hidden sm:block">
               <span className="font-bold text-foreground text-sm leading-tight block">
-                SolarSizer
+                SolarSizer REB
               </span>
               <span className="text-[10px] text-muted-foreground leading-tight block">
-                L'énergie sur mesure
+                L'énergie PV sur mesure
               </span>
             </div>
           </div>
@@ -188,7 +188,7 @@ export default function Index() {
               Ouvrir le Calculateur
               <ChevronRight className="w-5 h-5" />
             </Button>
-            <p className="text-xs text-muted-foreground mt-3">Entrez vos charges énergétiques pour chaque site →</p>
+            <p className="text-xs text-muted-foreground mt-3">Entrez les charges énergétiques pour chaque site →</p>
           </motion.div>
         </div>
 
@@ -314,7 +314,7 @@ export default function Index() {
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2 sm:mb-3">
               Fonctionnalités du Calculateur
             </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">Un outil complet pour le dimensionnement des systèmes PV off-grid pour les ouvrages Sonatrach REB-GPL
+            <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">Un outil complet pour le dimensionnement du systèmes PV off-grid pour les ouvrages Sonatrach REB-GPL
 
             </p>
           </div>
@@ -362,7 +362,7 @@ export default function Index() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8 sm:mb-10">
             <h2 className="text-xl sm:text-2xl font-bold mb-2">Paramètres par Défaut Préconfigurés</h2>
-            <p className="text-white/70 text-sm sm:text-base">Paramètres spécifiques au site REB intégrés — entrez simplement les charges énergétiques
+            <p className="text-white/70 text-sm sm:text-base">Paramètres spécifiques au site REB intégrés — modifer simplement
 
             </p>
           </div>
@@ -388,7 +388,7 @@ export default function Index() {
       <section className="py-12 sm:py-20 px-4 sm:px-6">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
-            Commencez le Dimensionnement & Vérifiez vos Calculs
+            Commencez le Dimensionnement & Vérifiez les Calculs
           </h2>
           <p className="text-muted-foreground mb-6 sm:mb-8 text-sm sm:text-base">Ouvrez le calculateur, entrez les charges énergétiques pour chaque site et obtenez instantanément les résultats de dimensionnement PV et batterie.
 

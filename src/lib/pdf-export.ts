@@ -95,7 +95,7 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
     ["Emplacement", "Rhourde El Baguel, Algérie (Désert du Sahara)"],
     ["Heures de Soleil Crête (PSH)", `${psh} h/jour ${pshLabel}`],
     ["Ratio de Performance (PR)", `${pr} (valeur conservative, pertes câblage/température)`],
-    ["Module PV", `${modulePower} Wp — Jinko Solar (mono-PERC)`],
+    ["Module PV", `${modulePower} Wp — ${results[0]?.params.moduleName ?? "Jinko Solar (mono-PERC)"}`],
     ["Tension Système", `${systemVoltage} V DC`],
     ["Technologie Batterie", "Ni-Cad (Nickel-Cadmium), 1,2 V/cellule"],
     ["Autonomie Batterie", `${autonomy} jours`],
@@ -388,9 +388,6 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
   // Parametres fixes pour le calcul Cable (comme SiteCableChecker)
   const RHO_CU = 0.02314;
   const EPSILON = 0.03;
-  const IMP = 13.33;
-  const ISC = 14.07;
-  const VMP = 41.64;
   const L1_DEF = 3;
   const L2_DEF = 30;
   const L3_DEF = 8;
@@ -405,6 +402,11 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
     const result = results[i];
     const { pv, params } = result;
     const siteId = result.siteId;
+
+    // Module params — synced with catalogue (fallback: Jinko 555 Wp)
+    const IMP = params.moduleImp ?? 13.33;
+    const ISC = params.moduleIsc ?? 14.07;
+    const VMP = params.moduleVmp ?? 41.64;
     
     if (y > 200) { doc.addPage(); y = 20; }
     
@@ -507,69 +509,159 @@ export function generateSizingPDF(results: SiteResult[], projectName?: string): 
   doc.line(margin, y, pageW - margin, y);
   y += 15;
   
-  const VOC_DEF = 41.78;
-  const ISC_DEF = 14.07;
-  const K_VOC = 1.15;
-  const K_ISC = 1.25;
-  const V_MAX_MPPT = 200;
-  
+  // Coefficients GATECH (identiques à SiteMpptChecker)
+  const MPPT_K_VOC   = 1.14;  // correction température froide (nuit désert)
+  const MPPT_K_ISC   = 1.25;  // marge sécurité courant IEC 62548
+
   const SITE_MPPT_MODEL: Record<string, string> = {
     BVS1: "GS-MPPT-100M", BVS2: "GS-MPPT-80M", TA: "GS-MPPT-100M",
   };
-  
-  const MPPT_SPECS: Record<string, { vmax: number; imax: number; label: string }> = {
-    "GS-MPPT-100M": { vmax: 200, imax: 100, label: "Morning Star GS-MPPT-100M" },
-    "GS-MPPT-80M":  { vmax: 200, imax: 80,  label: "Morning Star GS-MPPT-80M" },
+
+  const MPPT_SPECS_PDF: Record<string, { vmaxInput: number; imaxInput: number; label: string }> = {
+    "GS-MPPT-100M": { vmaxInput: 200, imaxInput: 100, label: "Morning Star GS-MPPT-100M" },
+    "GS-MPPT-80M":  { vmaxInput: 200, imaxInput: 80,  label: "Morning Star GS-MPPT-80M"  },
   };
-  
+
   for (let i = 0; i < results.length; i++) {
     const result = results[i];
-    const { pv, params } = result;
+    const { pv } = result;
     const siteId = result.siteId;
-    
+
+    // Module params — synced with catalogue (fallback: Jinko 555 Wp)
+    const MPPT_VOC_DEF = result.params.moduleVoc ?? 50.34;
+    const MPPT_ISC_DEF = result.params.moduleIsc ?? 14.07;
+
     if (y > 200) { doc.addPage(); y = 20; }
-    
+
+    // Np = parallelStrings par MPPT indépendant (identique à SiteMpptChecker)
     const ns = pv.seriesPerGroup;
-    const np = pv.parallelStrings * params.groups;
+    const np = pv.parallelStrings;
     const model = SITE_MPPT_MODEL[siteId] ?? "GS-MPPT-100M";
-    const specs = MPPT_SPECS[model];
-    
-    const vocMax = VOC_DEF * ns * K_VOC;
-    const iscMax = ISC_DEF * np * K_ISC;
-    const vocOk = vocMax <= V_MAX_MPPT;
-    const iscOk = iscMax <= specs.imax;
-    
-    // En-tete MPPT
+    const mpptSpecs = MPPT_SPECS_PDF[model];
+
+    // Tension et courant corrigés (même logique que SiteMpptChecker)
+    const vocCorrige = MPPT_VOC_DEF * MPPT_K_VOC;  // Voc d'un module corrigé
+    const iscCorrige = MPPT_ISC_DEF * MPPT_K_ISC;  // Isc d'une chaîne corrigé
+
+    const vocString  = vocCorrige * ns;
+    const iscTotal   = iscCorrige * np;
+
+    // Ns max et Np max autorisés
+    const nsMax = Math.floor(mpptSpecs.vmaxInput / vocCorrige);
+    const npMax = Math.floor(mpptSpecs.imaxInput / iscCorrige);
+
+    const vocOk = ns <= nsMax;  // vocString ≤ vmaxInput
+    const iscOk = np <= npMax;  // iscTotal  ≤ imaxInput
+    const globalOk = vocOk && iscOk;
+
+    const vocPct = (vocString / mpptSpecs.vmaxInput) * 100;
+    const iscPct = (iscTotal  / mpptSpecs.imaxInput) * 100;
+
+    // En-tête site MPPT — deux lignes pour éviter le débordement
     doc.setFillColor(255, 242, 230);
-    doc.rect(margin, y - 3, pageW - 2*margin, 8, "F");
+    doc.rect(margin, y - 3, pageW - 2 * margin, 16, "F");
+    doc.setFillColor(...BRAND_ORANGE);
+    doc.rect(margin, y - 3, 4, 16, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(...BRAND_ORANGE);
-    doc.text(`MPPT - ${siteId} (${model})`, margin + 3, y + 2);
-    y += 12;
-    
+    doc.text(`MPPT - ${siteId}`, margin + 7, y + 2);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...DARK);
+    doc.text(mpptSpecs.label, margin + 7, y + 8);
+    // Status badge (right side)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(globalOk ? 34 : 220, globalOk ? 120 : 38, globalOk ? 34 : 38);
+    doc.text(globalOk ? "COMPATIBLE" : "INCOMPATIBLE", pageW - margin, y + 5, { align: "right" });
+    y += 20;
+
+    // Config info line
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY);
+    doc.text(
+      `Ns=${ns} mod/chaine  |  Np=${np} chaines  |  Voc=${MPPT_VOC_DEF} V  |  Isc=${MPPT_ISC_DEF} A` +
+      `   =>   Voc_corr=${vocCorrige.toFixed(2)} V (x${MPPT_K_VOC})  |  Isc_corr=${iscCorrige.toFixed(2)} A (x${MPPT_K_ISC})`,
+      margin, y
+    );
+    y += 6;
+
     autoTable(doc, {
       startY: y,
-      head: [["Parametre", "Valeur", "Limite", "Statut"]],
+      head: [["Critere", "Calcul", "Valeur", "Limite", "Charge", "Statut"]],
       body: [
-        ["Modules en serie (Ns)", ns.toString(), "-", "-"],
-        ["Chaines en parallele (Np)", np.toString(), "-", "-"],
-        ["Voc max (Voc x Ns x " + K_VOC + ")", vocMax.toFixed(2) + " V", V_MAX_MPPT + " V", vocOk ? "CONFORME" : "DANGER"],
-        ["Isc max (Isc x Np x " + K_ISC + ")", iscMax.toFixed(2) + " A", specs.imax + " A", iscOk ? "CONFORME" : "DANGER"],
+        [
+          "Tension chaine",
+          `${vocCorrige.toFixed(2)} x ${ns}`,
+          `${vocString.toFixed(2)} V`,
+          `<= ${mpptSpecs.vmaxInput} V`,
+          `${vocPct.toFixed(1)}%`,
+          vocOk ? `OK  Marge ${(mpptSpecs.vmaxInput - vocString).toFixed(1)} V` : "DANGER - DESTRUCTION",
+        ],
+        [
+          "Courant total",
+          `${iscCorrige.toFixed(2)} x ${np}`,
+          `${iscTotal.toFixed(2)} A`,
+          `<= ${mpptSpecs.imaxInput} A`,
+          `${iscPct.toFixed(1)}%`,
+          iscOk ? `OK  Marge ${(mpptSpecs.imaxInput - iscTotal).toFixed(1)} A` : "DANGER - SURCHARGE",
+        ],
+        [
+          "Ns max autorise",
+          `floor(${mpptSpecs.vmaxInput}/${vocCorrige.toFixed(2)})`,
+          `${ns} utilise`,
+          `<= ${nsMax}`,
+          "—",
+          ns <= nsMax ? "OK" : `Reduire <= ${nsMax}`,
+        ],
+        [
+          "Np max autorise",
+          `floor(${mpptSpecs.imaxInput}/${iscCorrige.toFixed(2)})`,
+          `${np} utilise`,
+          `<= ${npMax}`,
+          "—",
+          np <= npMax ? "OK" : `Reduire <= ${npMax}`,
+        ],
       ],
       theme: "striped",
-      headStyles: { fillColor: [255, 102, 0], textColor: [255, 255, 255], fontSize: 9 },
-      bodyStyles: { fontSize: 9 },
+      headStyles: { fillColor: [255, 102, 0], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8 },
       alternateRowStyles: { fillColor: [255, 242, 230] },
       columnStyles: {
-        0: { cellWidth: 50, fontStyle: "bold" },
-        1: { halign: "center" },
-        2: { halign: "center" },
-        3: { halign: "center", fontStyle: "bold" },
+        0: { cellWidth: 32, fontStyle: "bold", textColor: DARK },
+        1: { cellWidth: 38, textColor: GRAY, fontSize: 7 },
+        2: { cellWidth: 24, halign: "right", fontStyle: "bold" },
+        3: { cellWidth: 22, halign: "center", textColor: GRAY },
+        4: { cellWidth: 16, halign: "center" },
+        5: { cellWidth: "auto", fontStyle: "bold" },
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      didParseCell: (data: any) => {
+        if (data.section === "body" && data.column.index === 5) {
+          const ri = data.row.index as number;
+          const ok = ri === 0 ? vocOk : ri === 1 ? iscOk : ri === 2 ? ns <= nsMax : np <= npMax;
+          data.cell.styles.textColor = ok ? [34, 120, 34] : [200, 0, 0];
+        }
       },
       margin: { left: margin, right: margin },
     });
-    y = ((doc as unknown) as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
+    y = ((doc as unknown) as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 5;
+
+    // Verdict bar
+    doc.setFillColor(globalOk ? 34 : 200, globalOk ? 150 : 0, globalOk ? 34 : 0);
+    doc.rect(margin, y, pageW - 2 * margin, 9, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.text(
+      globalOk
+        ? `Configuration ${ns}S x ${np}P compatible avec ${model}`
+        : `Incompatible — ${!vocOk ? `Ns <= ${nsMax}` : ""}${!vocOk && !iscOk ? "  |  " : ""}${!iscOk ? `Np <= ${npMax}` : ""}`,
+      pageW / 2, y + 6, { align: "center" }
+    );
+    y += 14;
   }
 
   // ── Pied de page sur toutes les pages ──────────────────────────────────────
@@ -787,7 +879,7 @@ export function generateExcel(results: SiteResult[], projectName?: string): void
   XLSX.utils.book_append_sheet(wb, ws6, "Paramètres");
 
   // ═══ FEUILLE 7: CABLES PV ═══
-  const RHOC = 0.02314, EPS = 0.03, IMP = 13.33, ISC = 14.07, VMP = 41.64;
+  const RHOC = 0.02314, EPS = 0.03;
   const SECS = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240];
   const IZ: Record<number, number> = {1.5:20,2.5:27,4:36,6:47,10:66,16:88,25:117,35:146,50:177,70:226,95:274,120:318,150:363,185:415,240:489};
   const r7: any[][] = [];
@@ -795,9 +887,12 @@ export function generateExcel(results: SiteResult[], projectName?: string): void
   r7.push([sc(""), sc(""), sc(""), sc(""), sc(""), sc(""), sc(""), sc("")]);
   r7.push([sc("Site", true, LIGHT_GRAY), sc("Segment", true, LIGHT_GRAY), sc("L(m)", true, LIGHT_GRAY), sc("I(A)", true, LIGHT_GRAY), sc("S_calc", true, LIGHT_GRAY), sc("S_choisie", true, LIGHT_GRAY), sc("DV%", true, LIGHT_GRAY), sc("IzOK", true, LIGHT_GRAY)]);
   results.forEach(r => {
+    const IMP_XL = r.params.moduleImp ?? 13.33;
+    const ISC_XL = r.params.moduleIsc ?? 14.07;
+    const VMP_XL = r.params.moduleVmp ?? 41.64;
     const np = r.pv.parallelStrings * r.params.groups;
-    const vM = VMP * r.pv.seriesPerGroup, vS = r.params.systemVoltage;
-    const segs = [{n:"M->BJ",L:3,I:IMP,V:vM,Is:ISC},{n:"BJ->Arm",L:30,I:IMP*np,V:vM,Is:ISC*np},{n:"B->Arm",L:8,I:100,V:vS,Is:ISC*np}];
+    const vM = VMP_XL * r.pv.seriesPerGroup, vS = r.params.systemVoltage;
+    const segs = [{n:"M->BJ",L:3,I:IMP_XL,V:vM,Is:ISC_XL},{n:"BJ->Arm",L:30,I:IMP_XL*np,V:vM,Is:ISC_XL*np},{n:"B->Arm",L:8,I:100,V:vS,Is:ISC_XL*np}];
     segs.forEach(s => {
       const sCalc = (RHOC * 2 * s.L * s.I) / (EPS * s.V);
       const izr = 1.25 * s.Is;
@@ -816,21 +911,52 @@ export function generateExcel(results: SiteResult[], projectName?: string): void
   XLSX.utils.book_append_sheet(wb, ws7, "Cables PV");
 
   // ═══ FEUILLE 8: MPPT ═══
-  const VOC=41.78,KVO=1.15,VMAX=200;
-  const MPTS: Record<string,string> = {BVS1:"GS-MPPT-100M",BVS2:"GS-MPPT-80M",TA:"GS-MPPT-100M"};
+  // Coefficients identiques à SiteMpptChecker (Jinko 555 Wp Tiger Neo)
+  const XL_VOC_DEF = 50.34, XL_ISC_DEF = 14.07, XL_K_VOC = 1.14, XL_K_ISC = 1.25;
+  const XL_MPTS: Record<string, string>    = { BVS1: "GS-MPPT-100M", BVS2: "GS-MPPT-80M", TA: "GS-MPPT-100M" };
+  const XL_MPPT_SPECS: Record<string, { vmaxInput: number; imaxInput: number }> = {
+    "GS-MPPT-100M": { vmaxInput: 200, imaxInput: 100 },
+    "GS-MPPT-80M":  { vmaxInput: 200, imaxInput: 80  },
+  };
+  const xlVocCorr = XL_VOC_DEF * XL_K_VOC;  // module corrigé
+  const xlIscCorr = XL_ISC_DEF * XL_K_ISC;  // chaîne corrigée
   const r8: any[][] = [];
-  r8.push([sc("MPPT", true, ORANGE, WHITE), sc(""), sc(""), sc(""), sc(""), sc("")]);
-  r8.push([sc(""), sc(""), sc(""), sc(""), sc(""), sc("")]);
-  r8.push([sc("Site", true, LIGHT_GRAY), sc("Modele", true, LIGHT_GRAY), sc("Ns", true, LIGHT_GRAY), sc("Np", true, LIGHT_GRAY), sc("VocMax", true, LIGHT_GRAY), sc("Statut", true, LIGHT_GRAY)]);
-  results.forEach(r => {
-    const ns=r.pv.seriesPerGroup, np=r.pv.parallelStrings*r.params.groups;
-    const m = MPTS[r.siteId] ?? "GS-MPPT-100M";
-    const vocMax = VOC * ns * KVO;
-    const ok = vocMax <= VMAX;
-    r8.push([sc(r.siteId, true, null, ORANGE), sc(m), sc(ns), sc(np), sc(vocMax.toFixed(2)), sc(ok?"OK":"DANGER",true)]);
+  r8.push([sc("COMPATIBILITÉ MPPT", true, ORANGE, WHITE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE), sc("", ORANGE)]);
+  r8.push([sc(`Voc_corrigé = Voc × ${XL_K_VOC} = ${xlVocCorr.toFixed(2)} V | Isc_corrigée = Isc × ${XL_K_ISC} = ${xlIscCorr.toFixed(2)} A  (Jinko 555 Wp STC)`, false), sc(""), sc(""), sc(""), sc(""), sc(""), sc(""), sc(""), sc("")]);
+  r8.push([sc(""), sc(""), sc(""), sc(""), sc(""), sc(""), sc(""), sc(""), sc("")]);
+  r8.push([
+    sc("Site",          true, LIGHT_GRAY), sc("Modèle MPPT",   true, LIGHT_GRAY),
+    sc("Ns",            true, LIGHT_GRAY), sc("Np",            true, LIGHT_GRAY),
+    sc("Vstring (V)",   true, LIGHT_GRAY), sc("Vmax (V)",      true, LIGHT_GRAY),
+    sc("Itotal (A)",    true, LIGHT_GRAY), sc("Imax (A)",      true, LIGHT_GRAY),
+    sc("Statut",        true, LIGHT_GRAY),
+  ]);
+  results.forEach((r, idx) => {
+    const ns = r.pv.seriesPerGroup;
+    const np = r.pv.parallelStrings;  // par MPPT indépendant
+    const m  = XL_MPTS[r.siteId] ?? "GS-MPPT-100M";
+    const sp = XL_MPPT_SPECS[m];
+    const vStr  = xlVocCorr * ns;
+    const iTotal = xlIscCorr * np;
+    const vocOk = vStr  <= sp.vmaxInput;
+    const iscOk = iTotal <= sp.imaxInput;
+    const ok = vocOk && iscOk;
+    const bg = idx % 2 === 0 ? null : LIGHT_GRAY;
+    r8.push([
+      sc(r.siteId, true, bg, ORANGE),
+      sc(m,         false, bg),
+      sc(ns,        false, bg),
+      sc(np,        false, bg),
+      sc(vStr.toFixed(2),   true, bg, vocOk ? DARK : { r:220, g:38, b:38 }),
+      sc(sp.vmaxInput,      false, bg),
+      sc(iTotal.toFixed(2), true, bg, iscOk ? DARK : { r:220, g:38, b:38 }),
+      sc(sp.imaxInput,      false, bg),
+      sc(ok ? "✅ COMPATIBLE" : "❌ INCOMPATIBLE", true, bg, ok ? { r:34, g:197, b:94 } : { r:220, g:38, b:38 }),
+    ]);
   });
   const ws8 = XLSX.utils.aoa_to_sheet(r8);
-  ws8["!cols"] = [{wch:10},{wch:18},{wch:8},{wch:8},{wch:12},{wch:12}];
+  ws8["!cols"] = [{ wch: 10 }, { wch: 20 }, { wch: 8 }, { wch: 8 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 18 }];
+  ws8["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }];
   XLSX.utils.book_append_sheet(wb, ws8, "MPPT");
   
   // Save

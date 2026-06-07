@@ -13,9 +13,10 @@ import { CheckCircle2, XCircle, AlertTriangle, Cpu, RefreshCw, Zap } from "lucid
 import type { SiteResult, GatechMpptModel } from "@/lib/solar-calc.ts";
 import { GATECH_MPPT_SPECS } from "@/lib/solar-calc.ts";
 
-// Paramètres Jinko 555 Wp Tiger Neo (STC) — Document GATECH
-const VOC_DEF = 50.34; // V — Voc STC
-const ISC_DEF = 14.07; // A
+// Paramètres module depuis les params du site (synced avec le catalogue)
+// Les constantes ci-dessous sont des valeurs de fallback Jinko 555 Wp
+const VOC_DEF_FALLBACK = 50.34;
+const ISC_DEF_FALLBACK = 14.07;
 
 // Coefficients de sécurité GATECH
 const K_VOC = 1.14;   // correction température froide (nuit désert)
@@ -40,10 +41,14 @@ export default function SiteMpptChecker({ result }: Props) {
   // Np par groupe/MPPT indépendant (TA: 2 groupes avec MPPT indép.)
   const np = pv.parallelStrings;
 
-  const [voc, setVoc] = useState(VOC_DEF);
-  const [isc, setIsc] = useState(ISC_DEF);
+  // Lire les params électriques du module depuis params (synced avec catalogue)
+  const vocDefault = params.moduleVoc ?? VOC_DEF_FALLBACK;
+  const iscDefault = params.moduleIsc ?? ISC_DEF_FALLBACK;
 
-  const reset = () => { setVoc(VOC_DEF); setIsc(ISC_DEF); };
+  const [voc, setVoc] = useState(vocDefault);
+  const [isc, setIsc] = useState(iscDefault);
+
+  const reset = () => { setVoc(vocDefault); setIsc(iscDefault); };
 
   const specs = GATECH_MPPT_SPECS[model];
 
