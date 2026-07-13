@@ -205,7 +205,7 @@ export default function Index() {
               label: "Puissance Module",
               value: "550 Wp",
               sub: "Ecogreen Atlas",
-              href: "/datasheets/ECOGREEN Atlas 530 550Wdatasheet.pdf",
+              href: "/datasheets/ATLAS-530-550W-144MM10-MONO-10BB-English.pdf",
               desc: "Module photovoltaïque monocristallin"
             },
             {
