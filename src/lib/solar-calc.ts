@@ -23,21 +23,6 @@ export type PvModule = {
 
 /** Central catalog — add new panels here, they appear automatically everywhere */
 export const PV_MODULES: Record<string, PvModule> = {
-  "jinko-555": {
-    id: "jinko-555",
-    brand: "Jinko Solar",
-    model: "Tiger Neo JKM555N-72HL4-V",
-    technology: "N-type Mono-PERC",
-    pmax: 555,
-    vmp: 41.64,
-    imp: 13.33,
-    voc: 50.34,
-    isc: 14.07,
-    efficiency: 21.48,
-    tempCoeffPmax: -0.30,
-    dimensions: [2278, 1134, 35],
-    weight: 28,
-  },
   "ecogreen-550": {
     id: "ecogreen-550",
     brand: "Ecogreen",
@@ -52,6 +37,21 @@ export const PV_MODULES: Record<string, PvModule> = {
     tempCoeffPmax: -0.35,
     dimensions: [2279, 1134, 35],
     weight: 29,
+  },
+  "jinko-555": {
+    id: "jinko-555",
+    brand: "Jinko Solar",
+    model: "Tiger Neo JKM555N-72HL4-V",
+    technology: "N-type Mono-PERC",
+    pmax: 555,
+    vmp: 41.64,
+    imp: 13.33,
+    voc: 50.34,
+    isc: 14.07,
+    efficiency: 21.48,
+    tempCoeffPmax: -0.30,
+    dimensions: [2278, 1134, 35],
+    weight: 28,
   },
   /** Sentinel entry — user fills in all values manually in the form */
   "custom": {
@@ -71,7 +71,7 @@ export const PV_MODULES: Record<string, PvModule> = {
   },
 };
 
-export const DEFAULT_MODULE_ID = "jinko-555";
+export const DEFAULT_MODULE_ID = "ecogreen-550";
 
 export type SiteParams = {
   siteId: string;
